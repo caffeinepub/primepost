@@ -67,6 +67,7 @@ export const UserRole = IDL.Variant({
 export const UserProfile = IDL.Record({
   'acceptedStoreOwnerTerms' : IDL.Bool,
   'dateOfBirth' : IDL.Text,
+  'userId' : IDL.Text,
   'role' : UserRole,
   'stateOfResidence' : IDL.Text,
   'fullName' : IDL.Text,
@@ -127,6 +128,7 @@ export const idlService = IDL.Service({
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole__1], [], []),
   'blockStore' : IDL.Func([StoreId], [], []),
   'bootstrapSuperAdmin' : IDL.Func([], [], []),
+  'clearSuperAdminBootstrapState' : IDL.Func([], [], []),
   'createProduct' : IDL.Func(
       [StoreId, IDL.Text, ExternalBlob, IDL.Nat, IDL.Nat],
       [ProductId],
@@ -138,6 +140,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'deleteProduct' : IDL.Func([ProductId], [], []),
+  'factoryReset' : IDL.Func([], [], []),
   'getAllCustomers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllStores' : IDL.Func([], [IDL.Vec(Store)], ['query']),
@@ -150,6 +153,7 @@ export const idlService = IDL.Service({
   'getStoreOrders' : IDL.Func([StoreId], [IDL.Vec(Order)], ['query']),
   'getStoreProducts' : IDL.Func([StoreId], [IDL.Vec(Product)], ['query']),
   'getStoreReviews' : IDL.Func([StoreId], [IDL.Vec(Review)], ['query']),
+  'getSuperAdminBootstrapped' : IDL.Func([], [IDL.Bool], ['query']),
   'getTermsContent' : IDL.Func([TermsType], [IDL.Opt(IDL.Text)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -274,6 +278,7 @@ export const idlFactory = ({ IDL }) => {
   const UserProfile = IDL.Record({
     'acceptedStoreOwnerTerms' : IDL.Bool,
     'dateOfBirth' : IDL.Text,
+    'userId' : IDL.Text,
     'role' : UserRole,
     'stateOfResidence' : IDL.Text,
     'fullName' : IDL.Text,
@@ -334,6 +339,7 @@ export const idlFactory = ({ IDL }) => {
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole__1], [], []),
     'blockStore' : IDL.Func([StoreId], [], []),
     'bootstrapSuperAdmin' : IDL.Func([], [], []),
+    'clearSuperAdminBootstrapState' : IDL.Func([], [], []),
     'createProduct' : IDL.Func(
         [StoreId, IDL.Text, ExternalBlob, IDL.Nat, IDL.Nat],
         [ProductId],
@@ -345,6 +351,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'deleteProduct' : IDL.Func([ProductId], [], []),
+    'factoryReset' : IDL.Func([], [], []),
     'getAllCustomers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllStores' : IDL.Func([], [IDL.Vec(Store)], ['query']),
@@ -357,6 +364,7 @@ export const idlFactory = ({ IDL }) => {
     'getStoreOrders' : IDL.Func([StoreId], [IDL.Vec(Order)], ['query']),
     'getStoreProducts' : IDL.Func([StoreId], [IDL.Vec(Product)], ['query']),
     'getStoreReviews' : IDL.Func([StoreId], [IDL.Vec(Review)], ['query']),
+    'getSuperAdminBootstrapped' : IDL.Func([], [IDL.Bool], ['query']),
     'getTermsContent' : IDL.Func([TermsType], [IDL.Opt(IDL.Text)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],

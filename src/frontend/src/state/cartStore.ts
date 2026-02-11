@@ -13,6 +13,7 @@ interface CartState {
   removeItem: (storeId: StoreId, productId: ProductId) => void;
   updateQuantity: (storeId: StoreId, productId: ProductId, quantity: number) => void;
   clearCart: (storeId: StoreId) => void;
+  clearAllCarts: () => void;
   getStoreCart: (storeId: StoreId) => CartItem[];
   getStoreTotal: (storeId: StoreId) => bigint;
 }
@@ -69,17 +70,20 @@ export const useCartStore = create<CartState>()(
           return { items: rest };
         });
       },
+      clearAllCarts: () => {
+        set({ items: {} });
+      },
       getStoreCart: (storeId) => {
         return get().items[storeId] || [];
       },
       getStoreTotal: (storeId) => {
         const items = get().items[storeId] || [];
         return items.reduce((total, item) => {
-          const price = item.product.discount
-            ? item.product.price - (item.product.price * item.product.discount) / 100n
+          const price = item.product.discount 
+            ? item.product.price - item.product.discount 
             : item.product.price;
           return total + price * BigInt(item.quantity);
-        }, 0n);
+        }, BigInt(0));
       },
     }),
     {

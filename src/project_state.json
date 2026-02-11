@@ -1,445 +1,105 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 27,
-  "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, including first-time user onboarding, PIN/biometric-based login, and admin-managed legal documents (Terms & Conditions + Privacy Policy) presented in-app.",
+  "projectStateVersion": 3,
+  "summary": "PrimePost: secure, scalable, mobile-only (Android/iOS) multi-vendor POS + marketplace app built in Flutter with full English/French bilingual support, role-based access (Customer/Store Owner/Super Admin), sequential 5-digit user IDs, PIN/password security, real-time order updates, push notifications, and cloud backend (e.g., Firebase).",
   "architectural_notes": [
-    "Project name: PrimePost.",
-    "Clients: Flutter mobile apps (Customer + Store Owner/Worker) for iOS/Android; React web app for Admin dashboard.",
-    "Backend options discussed: Node.js + Express or Firebase; database Firestore or PostgreSQL.",
-    "System requirements: secure auth + RBAC, cloud database, GPS/location support, push notifications, scalable architecture.",
-    "Real-time updates required (Firebase realtime mechanisms or WebSockets).",
-    "Payments: Mobile Money integration (e.g., MTN, Orange).",
-    "Note: mentions 'floater technology' as a build constraint/requirement (unclear definition).",
-    "Auth direction change: users should sign up with name/phone/email and use a persistent 4-digit PIN, with optional biometric (fingerprint/Face ID) support for login and transaction confirmation (not Internet Identity-only).",
-    "Add admin-managed Terms & Conditions documents (separate for Customer and Store Owner apps) and require first-login acceptance for customers.",
-    "Biometric/WebAuthn prompts must be non-blocking: always allow Skip, handle cancel/failure/success by closing the modal and continuing the flow; apply consistently across all app roles (Customer, Owner/Worker, Admin)."
+    "Mobile-only scope: no web dashboard/platform.",
+    "Tech stack requirement: Flutter app supporting both Android and iOS.",
+    "Full bilingual localization (English/French) with in-app language switch.",
+    "Backend should be scalable cloud (e.g., Firebase) with role-based access control and strict separation between Customer/Owner/Admin.",
+    "Unique ID generation must be sequential 5-digit numeric (00001, 00002, ...) for Customers and Store Owners; must prevent duplicates and disallow edits.",
+    "Security: hash/encrypt sensitive credentials (PIN/password); protect user data.",
+    "Real-time updates required for order status synchronization between owner and customer.",
+    "Push notifications required for order events and owner/customer alerts."
   ],
-  "known_issues": [
-    "Login/onboarding can get stuck on the biometric enablement popup: Skip button non-responsive and fingerprint prompt completion does not advance; reported across Customer, Owner/Worker, and Admin experiences (notably on Android/WebAuthn).",
-    "Regression/bug: login flow stops after entering password (does not continue) across all roles (Store Owner/Worker, Admin, Customer) and persists across different browsers; users cannot access any app area.",
-    "Customer Terms & Conditions acceptance screen reports \"Terms and Conditions are not yet available\" even though Terms & Conditions text was provided and expected to be published/available.",
-    "Production launch/deployment failed with a deployment error (needs investigation to restore production deployment pipeline).",
-    "Admin login flow is incorrectly blocked by Terms & Conditions availability/acceptance (shows \"Terms and Conditions is not available\" for Admin, but Admin should not need T&C).",
-    "Downloaded PrimePost Android APK does not open/launch on Android device (app fails to start after install).",
-    "Downloaded APK file size is suspiciously small (likely truncated/invalid), leading to Android install failure with “There was a problem parsing the package.”",
-    "Version 11 PrimePost APK still fails to install on Android with error: “There was a problem parsing the package.”",
-    "Public APK download is still serving an HTML response instead of a real APK binary (user reports same parse/install error; request: \"send it as APK not HTML\")."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-implement-role-based-accounts-and-access-control-with-three-roles-customer-store-owner-worker-super-admin-each-having-a-separate-login-entry-and-dashboard-authentication-must-use-internet-identity-and-role-assignment-must-be-enforced-for-all-protected-pages-and-backend-methods",
-      "title": "Implement role-based accounts and access control with three roles (Customer, Store Owner/Worker, Super Admin), each having a separate login entry and dashboard; authentication must use Internet Identity and role assignment must be enforced for all protected pages and backend methods.",
+      "id": "feature-ensure-the-app-has-exactly-three-role-login-entry-points-on-the-main-screen-customer-store-owner-and-super-admin-with-no-other-login-types-visible-anywhere-in-the-ui",
+      "title": "Ensure the app has exactly three role login entry points on the main screen: Customer, Store Owner, and Super Admin, with no other login types visible anywhere in the UI.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-customer-experience-pages-a-store-access-by-entering-a-store-id-b-store-search-by-store-name-and-category-c-store-details-catalog-showing-product-image-price-and-availability-d-basket-cart-with-quantity-increase-decrease-and-item-removal",
-      "title": "Build Customer experience pages: (a) Store access by entering a Store ID, (b) store search by store name and category, (c) store details/catalog showing product image, price, and availability, (d) basket/cart with quantity increase/decrease and item removal.",
+      "id": "feature-implement-full-bilingual-english-french-ui-support-across-the-application-including-an-in-app-language-switch-in-settings-profile-and-apply-translations-consistently-to-all-customer-owner-and-admin-screens",
+      "title": "Implement full bilingual (English/French) UI support across the application, including an in-app language switch in Settings/Profile, and apply translations consistently to all customer, owner, and admin screens.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-sequential-unique-non-editable-5-digit-numeric-id-for-every-customer-and-store-owner-00001-00002-generated-automatically-on-first-registration-stored-in-backend-state-and-displayed-in-the-user-profile-ui",
+      "title": "Add a sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-customer-order-placement-flow-review-selected-items-enter-optional-table-number-add-special-note-choose-payment-method-cash-or-mobile-money-when-mobile-money-is-selected-display-the-store-s-registered-mobile-money-number-and-payment-instructions-before-confirming-the-order",
-      "title": "Implement customer order placement flow: review selected items, enter optional table number, add special note, choose payment method (Cash or Mobile Money); when Mobile Money is selected, display the store’s registered mobile money number and payment instructions before confirming the order.",
+      "id": "feature-enforce-mandatory-acceptance-of-both-terms-conditions-and-privacy-policy-before-a-customer-or-store-owner-can-complete-account-creation-with-super-admin-excluded-from-this-requirement",
+      "title": "Enforce mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation, with Super Admin excluded from this requirement.",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-order-status-lifecycle-and-tracking-ui-for-customers-with-statuses-pending-in-progress-on-the-way-completed-customers-can-view-current-status-for-active-orders-and-a-full-order-history-list",
-      "title": "Implement order status lifecycle and tracking UI for customers with statuses: Pending, In Progress, On The Way, Completed; customers can view current status for active orders and a full order history list.",
+      "id": "feature-implement-secure-pin-based-account-security-for-customers-and-store-owners-require-a-4-digit-pin-on-first-registration-store-only-a-hashed-form-use-it-for-future-in-app-unlock-login-gating-and-allow-pin-changes-from-profile-settings",
+      "title": "Implement secure PIN-based account security for Customers and Store Owners: require a 4-digit PIN on first registration, store only a hashed form, use it for future in-app unlock/login gating, and allow PIN changes from profile/settings.",
       "reqIds": [
         "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-store-owner-worker-store-registration-and-management-owners-can-create-a-store-receive-a-unique-store-id-set-category-location-text-and-mobile-money-number-owners-can-view-and-edit-their-store-details",
-      "title": "Build Store Owner/Worker store registration and management: owners can create a store, receive a unique Store ID, set category, location text, and mobile money number; owners can view and edit their store details.",
+      "id": "feature-implement-super-admin-first-login-password-setup-allow-first-login-without-an-existing-password-then-force-the-super-admin-to-create-a-password-after-first-login-and-require-that-password-for-future-admin-unlock-login-operations-within-the-app-session",
+      "title": "Implement Super Admin first-login password setup: allow first login without an existing password, then force the Super Admin to create a password after first login, and require that password for future admin unlock/login operations within the app session.",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-store-owner-worker-inventory-management-create-edit-delete-products-set-price-and-stock-quantity-upload-attach-a-product-image-reference-mark-out-of-stock-and-view-a-low-stock-alert-indicator-when-stock-is-below-a-configurable-threshold",
-      "title": "Build Store Owner/Worker inventory management: create/edit/delete products, set price and stock quantity, upload/attach a product image reference, mark out-of-stock, and view a low-stock alert indicator when stock is below a configurable threshold.",
+      "id": "feature-add-profile-management-for-customers-and-store-owners-to-update-mobile-number-email-address-optional-profile-photo-change-pin-and-switch-language-while-preventing-modification-of-the-assigned-5-digit-user-id",
+      "title": "Add profile management for Customers and Store Owners to update mobile number, email address, optional profile photo, change PIN, and switch language, while preventing modification of the assigned 5-digit user ID.",
       "reqIds": [
         "REQ-7"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-store-owner-worker-order-management-owners-receive-an-in-app-notification-indicator-for-new-orders-can-view-order-list-by-status-view-order-details-tick-items-one-by-one-while-picking-and-update-order-status-through-accept-order-in-progress-completed-mapping-to-customer-visible-states-pending-in-progress-on-the-way-completed-per-the-product-rules",
-      "title": "Build Store Owner/Worker order management: owners receive an in-app notification/indicator for new orders, can view order list by status, view order details, tick items one-by-one while picking, and update order status through: Accept Order → In Progress → Completed (mapping to customer-visible states: Pending/ In Progress/ On The Way/ Completed per the product rules).",
+      "id": "feature-support-customer-store-discovery-and-access-by-a-entering-store-id-b-searching-by-store-name-c-filtering-by-category-and-d-near-location-filtering-using-device-geolocation-gps-based-when-permission-is-granted",
+      "title": "Support customer store discovery and access by (a) entering Store ID, (b) searching by store name, (c) filtering by category, and (d) “near location” filtering using device geolocation (GPS-based) when permission is granted.",
       "reqIds": [
         "REQ-8"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-marketplace-owners-can-publish-products-as-special-sale-items-by-enabling-a-marketplace-flag-and-setting-a-discount-customers-can-browse-a-marketplace-page-search-items-by-name-and-filter-by-category-and-lowest-price",
-      "title": "Implement Marketplace: owners can publish products as special sale items by enabling a marketplace flag and setting a discount; customers can browse a Marketplace page, search items by name, and filter by category and lowest price.",
+      "id": "feature-implement-marketplace-functionality-store-owners-can-publish-promotional-discounted-items-and-special-offers-customers-can-browse-marketplace-search-items-by-name-filter-by-nearest-location-and-view-discounted-items",
+      "title": "Implement Marketplace functionality: Store Owners can publish promotional/discounted items and special offers; Customers can browse Marketplace, search items by name, filter by nearest location, and view discounted items.",
       "reqIds": [
-        "REQ-9"
+        "REQ-13"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-super-admin-web-dashboard-view-all-registered-stores-and-customers-monitor-transactions-by-status-pending-completed-at-minimum-view-total-revenue-and-per-store-commission-summary-block-unblock-stores-suspend-unsuspend-customers-and-show-basic-analytics-daily-weekly-monthly-counts-and-totals",
-      "title": "Build Super Admin web dashboard: view all registered stores and customers, monitor transactions by status (Pending/Completed at minimum), view total revenue and per-store commission summary, block/unblock stores, suspend/unsuspend customers, and show basic analytics (daily/weekly/monthly counts and totals).",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-customer-reviews-ratings-customers-can-submit-a-1-5-star-rating-and-optional-text-for-a-store-after-an-order-is-completed-store-pages-show-average-rating-and-recent-reviews",
-      "title": "Add customer reviews & ratings: customers can submit a 1–5 star rating (and optional text) for a store after an order is completed; store pages show average rating and recent reviews.",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-a-coherent-primepost-visual-theme-colors-typography-spacing-components-and-apply-it-consistently-across-customer-owner-worker-and-admin-dashboards-include-light-and-dark-mode-styling",
-      "title": "Create a coherent PrimePost visual theme (colors, typography, spacing, components) and apply it consistently across Customer, Owner/Worker, and Admin dashboards; include light and dark mode styling.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-extend-the-user-profile-data-model-to-store-first-time-onboarding-fields-full-name-phone-number-email-date-of-birth-nationality-and-state-of-residence",
-      "title": "Extend the user profile data model to store first-time onboarding fields: full name, phone number, email, date of birth, nationality, and state of residence.",
+      "id": "feature-expand-super-admin-capabilities-inside-the-mobile-app-to-view-all-customers-and-store-owners-monitor-transactions-orders-suspend-block-users-view-an-analytics-summary-and-manage-system-settings",
+      "title": "Expand Super Admin capabilities inside the mobile app to: view all customers and store owners, monitor transactions/orders, suspend/block users, view an analytics summary, and manage system settings.",
       "reqIds": [
         "REQ-14"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-terms-conditions-acceptance-tracking-so-that-on-first-login-customers-must-explicitly-accept-the-customer-terms-conditions-via-a-checkbox-before-gaining-access-to-customer-pages-store-owners-must-similarly-be-able-to-accept-store-owner-terms-conditions-before-using-owner-pages",
-      "title": "Add Terms & Conditions acceptance tracking so that, on first login, Customers must explicitly accept the Customer Terms & Conditions via a checkbox before gaining access to customer pages; Store Owners must similarly be able to accept Store Owner Terms & Conditions before using owner pages.",
+      "id": "feature-apply-a-cohesive-mobile-first-visual-theme-for-primepost-across-all-screens-customer-owner-admin-including-typography-spacing-and-component-styling-and-keep-it-consistent-in-both-light-and-dark-modes",
+      "title": "Apply a cohesive, mobile-first visual theme for PrimePost across all screens (Customer/Owner/Admin), including typography, spacing, and component styling, and keep it consistent in both light and dark modes.",
       "reqIds": [
         "REQ-15"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-admin-ui-section-to-view-and-edit-publish-terms-conditions-for-customers-and-store-owners-english-user-facing-text-and-save-changes-to-the-backend-using-the-super-admin-s-identity",
-      "title": "Add an Admin UI section to view and edit/publish Terms & Conditions for Customers and Store Owners (English user-facing text), and save changes to the backend using the super admin’s identity.",
-      "reqIds": [
-        "REQ-17"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-a-4-digit-pin-setup-and-device-local-unlock-step-that-users-can-use-all-the-time-to-re-enter-the-app-and-to-confirm-transactions-keep-internet-identity-as-the-account-identity-with-pin-acting-as-an-additional-local-verification-layer",
-      "title": "Implement a 4-digit PIN setup and device-local “unlock” step that users can use ‘all the time’ to re-enter the app and to confirm transactions; keep Internet Identity as the account identity, with PIN acting as an additional local verification layer.",
-      "reqIds": [
-        "REQ-18"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-optional-biometric-authentication-support-for-unlock-transaction-confirmation-when-the-browser-device-supports-it-e-g-via-webauthn-platform-authenticators-with-a-fallback-to-the-4-digit-pin-when-biometrics-are-unavailable-or-fail",
-      "title": "Add optional biometric authentication support for unlock/transaction confirmation when the browser/device supports it (e.g., via WebAuthn platform authenticators), with a fallback to the 4-digit PIN when biometrics are unavailable or fail.",
-      "reqIds": [
-        "REQ-19"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-pin-setup-flow-so-the-enable-biometric-authentication-step-can-never-block-app-navigation-clicking-skip-for-now-closing-the-dialog-or-completing-the-biometric-prompt-must-always-allow-the-user-to-continue-into-the-app-customer-store-owner-worker-and-admin",
-      "title": "Update the PIN setup flow so the “Enable Biometric Authentication” step can never block app navigation: clicking “Skip for Now”, closing the dialog, or completing the biometric prompt must always allow the user to continue into the app (Customer, Store Owner/Worker, and Admin).",
-      "reqIds": [
-        "REQ-20"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-local-pin-setup-state-reactive-so-the-app-correctly-stops-rendering-the-pin-setup-dialog-immediately-after-a-pin-is-saved-without-requiring-a-page-refresh",
-      "title": "Make local PIN setup state reactive so the app correctly stops rendering the PIN setup dialog immediately after a PIN is saved, without requiring a page refresh.",
-      "reqIds": [
-        "REQ-21"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-harden-webauthn-biometric-enable-verify-flows-to-prevent-ui-dead-ends-ensure-all-webauthn-calls-resolve-into-a-success-failure-outcome-that-the-ui-handles-and-prevent-double-submission-while-a-biometric-prompt-is-in-progress",
-      "title": "Harden WebAuthn biometric enable/verify flows to prevent UI dead-ends: ensure all WebAuthn calls resolve into a success/failure outcome that the UI handles, and prevent double-submission while a biometric prompt is in progress.",
-      "reqIds": [
-        "REQ-22"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-publish-the-user-provided-legal-text-in-the-app-by-setting-the-stored-content-for-1-customer-terms-conditions-2-store-owner-service-provider-terms-conditions-and-3-privacy-policy-exactly-as-provided-by-the-user-with-the-placeholder-token-app-name-replaced-with-primepost-wherever-it-appears",
-      "title": "Publish the user-provided legal text in the app by setting the stored content for (1) Customer Terms & Conditions, (2) Store Owner / Service Provider Terms & Conditions, and (3) Privacy Policy exactly as provided by the user, with the placeholder token \"[App Name]\" replaced with \"PrimePost\" wherever it appears.",
-      "reqIds": [
-        "REQ-24"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-user-facing-privacy-policy-screen-in-the-frontend-that-renders-the-stored-privacy-policy-text-with-the-same-readability-scrolling-treatment-used-by-the-existing-termsacceptancepage-and-make-it-reachable-from-all-roles-customer-store-owner-worker-super-admin-via-an-in-app-navigation-entry-or-footer-link-labeled-privacy-policy",
-      "title": "Add a user-facing Privacy Policy screen in the frontend that renders the stored Privacy Policy text with the same readability/scrolling treatment used by the existing TermsAcceptancePage, and make it reachable from all roles (Customer, Store Owner/Worker, Super Admin) via an in-app navigation entry or footer link labeled \"Privacy Policy\".",
-      "reqIds": [
-        "REQ-25"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-super-admin-dashboard-legal-documents-management-ui-to-include-a-privacy-policy-editor-view-edit-save-alongside-the-existing-customer-terms-and-store-owner-terms-editors",
-      "title": "Update the Super Admin dashboard legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside the existing Customer Terms and Store Owner Terms editors.",
-      "reqIds": [
-        "REQ-26"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-pin-unlock-flow-so-that-after-a-successful-pin-entry-or-successful-biometric-verification-the-app-reliably-advances-past-the-unlock-primepost-dialog-and-allows-navigation-to-the-selected-role-dashboard-customer-store-owner-worker-super-admin-in-the-same-browser-tab-session",
-      "title": "Fix the PIN unlock flow so that after a successful PIN entry (or successful biometric verification), the app reliably advances past the “Unlock PrimePost” dialog and allows navigation to the selected role dashboard (Customer, Store Owner/Worker, Super Admin) in the same browser tab/session.",
-      "reqIds": [
-        "REQ-27"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-local-pin-state-changes-reactive-across-multiple-hook-instances-within-the-same-tab-e-g-rootcomponent-and-unlockdialog-pinsetupdialog-so-that-calling-setpin-unlock-lock-updates-all-consumers-without-requiring-a-page-refresh-and-without-relying-solely-on-the-browser-storage-event",
-      "title": "Make local PIN state changes reactive across multiple hook instances within the same tab (e.g., RootComponent and UnlockDialog/PinSetupDialog), so that calling setPin()/unlock()/lock() updates all consumers without requiring a page refresh and without relying solely on the browser 'storage' event.",
-      "reqIds": [
-        "REQ-28"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-user-facing-error-handling-for-unlock-failures-so-users-are-never-left-in-a-silent-blocked-state-if-unlock-state-cannot-be-persisted-e-g-storage-unavailable-or-an-unexpected-error-occurs-during-unlock-show-a-clear-toast-error-message-in-english-and-keep-pin-input-available-for-retry",
-      "title": "Add user-facing error handling for unlock failures so users are never left in a silent blocked state: if unlock state cannot be persisted (e.g., storage unavailable) or an unexpected error occurs during unlock, show a clear toast/error message in English and keep PIN input available for retry.",
-      "reqIds": [
-        "REQ-29"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-customer-terms-conditions-and-store-owner-service-provider-terms-conditions-are-available-to-all-authenticated-users-customers-and-store-owners-so-the-termsacceptancepage-never-shows-the-blocking-message-terms-and-conditions-are-not-yet-available-please-contact-the-administrator-when-the-provided-legal-text-is-expected-to-be-live",
-      "title": "Ensure Customer Terms & Conditions and Store Owner / Service Provider Terms & Conditions are available to all authenticated users (customers and store owners) so the TermsAcceptancePage never shows the blocking message \"Terms and Conditions are not yet available. Please contact the administrator.\" when the provided legal text is expected to be live.",
-      "reqIds": [
-        "REQ-30"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-the-super-admin-publish-provided-legal-docs-action-reliably-publish-the-provided-legal-documents-to-the-backend-and-immediately-reflect-as-available-in-the-customer-owner-terms-acceptance-screens-no-page-refresh-required",
-      "title": "Make the Super Admin \"Publish Provided Legal Docs\" action reliably publish the provided legal documents to the backend and immediately reflect as available in the Customer/Owner terms acceptance screens (no page refresh required).",
-      "reqIds": [
-        "REQ-32"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-android-app-wrapper-for-primepost-that-can-be-built-into-an-installable-apk-using-the-existing-react-frontend-build-output-as-the-embedded-web-app",
-      "title": "Add an Android app wrapper for PrimePost that can be built into an installable APK, using the existing React frontend build output as the embedded web app.",
-      "reqIds": [
-        "REQ-33"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-and-document-a-repeatable-local-build-process-for-generating-the-android-apk-including-prerequisites-commands-and-where-the-apk-output-is-located",
-      "title": "Create and document a repeatable local build process for generating the Android APK, including prerequisites, commands, and where the APK output is located.",
-      "reqIds": [
-        "REQ-34"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-required-android-app-metadata-and-assets-so-the-apk-has-correct-app-naming-and-icons-for-primepost",
-      "title": "Add required Android app metadata and assets so the APK has correct app naming and icons for PrimePost.",
-      "reqIds": [
-        "REQ-35"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-internet-identity-login-flows-work-when-primepost-is-running-inside-the-android-wrapper-external-browser-custom-tab-as-needed-and-the-app-returns-to-primepost-after-authentication-without-leaving-the-user-stuck",
-      "title": "Ensure Internet Identity login flows work when PrimePost is running inside the Android wrapper (external browser/custom tab as needed), and the app returns to PrimePost after authentication without leaving the user stuck.",
-      "reqIds": [
-        "REQ-36"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-public-no-login-required-web-page-that-provides-a-direct-download-link-for-the-latest-primepost-android-apk-plus-short-install-instructions-in-english",
-      "title": "Add a public (no login required) web page that provides a direct download link for the latest PrimePost Android APK, plus short install instructions in English.",
-      "reqIds": [
-        "REQ-37"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-package-the-built-android-debug-apk-into-the-frontend-s-static-public-assets-under-a-stable-filename-so-the-download-page-can-link-to-it-consistently",
-      "title": "Package the built Android debug APK into the frontend’s static public assets under a stable filename so the download page can link to it consistently.",
-      "reqIds": [
-        "REQ-38"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-expose-the-apk-download-page-from-the-app-landing-experience-so-users-can-easily-find-the-apk-link-without-needing-developer-instructions",
-      "title": "Expose the APK download page from the app landing experience so users can easily find the APK link without needing developer instructions.",
-      "reqIds": [
-        "REQ-39"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-existing-android-apk-build-documentation-to-include-the-exact-url-path-users-should-open-to-download-the-apk-from-the-deployed-web-app-and-the-stable-apk-filename-used",
-      "title": "Update the existing Android APK build documentation to include the exact URL path users should open to download the APK from the deployed web app, and the stable APK filename used.",
-      "reqIds": [
-        "REQ-40"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-first-time-profile-onboarding-profilesetupdialog-so-that-selecting-the-admin-super-admin-role-does-not-require-accepting-terms-conditions-and-does-not-show-a-terms-acceptance-checkbox-for-admin",
-      "title": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
-      "reqIds": [
-        "REQ-41"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-super-admin-users-are-never-routed-to-termsacceptancepage-and-are-never-blocked-by-terms-availability-acceptance-checks-anywhere-in-the-admin-login-navigation-flow",
-      "title": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
-      "reqIds": [
-        "REQ-42"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-customer-and-store-owner-terms-screens-never-block-users-with-a-terms-and-conditions-are-not-yet-available-state-when-backend-terms-content-is-missing-render-the-provided-fallback-legal-text-and-allow-acceptance-to-proceed",
-      "title": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
-      "reqIds": [
-        "REQ-43"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-or-verify-and-wire-up-a-public-no-login-required-apk-download-page-route-in-the-react-app-and-link-to-it-from-the-landing-experience-so-users-can-download-the-apk-without-developer-instructions",
-      "title": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
-      "reqIds": [
-        "REQ-44"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-landing-screen-copy-so-the-three-login-options-are-explicitly-customer-store-admin-matching-the-user-s-requested-wording-while-keeping-role-routing-behavior-unchanged-customer-login-customer-store-login-owner-admin-login-admin",
-      "title": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
-      "reqIds": [
-        "REQ-45"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-public-apk-download-so-the-file-served-at-assets-primepost-apk-is-a-valid-installable-android-apk-not-an-html-text-response-or-truncated-file-and-the-downloaded-file-installs-opens-without-android-s-there-was-a-problem-parsing-the-package-error",
-      "title": "Fix the public APK download so the file served at /assets/primepost.apk is a valid, installable Android APK (not an HTML/text response or truncated file), and the downloaded file installs/opens without Android's “There was a problem parsing the package.” error.",
-      "reqIds": [
-        "REQ-46"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-android-apk-build-and-publish-workflow-so-the-generated-debug-apk-is-automatically-copied-packaged-into-the-react-app-s-static-public-assets-under-the-stable-filename-frontend-public-assets-primepost-apk-so-production-deployments-always-ship-the-correct-apk-referenced-by-apkdownloadpage-assets-primepost-apk",
-      "title": "Update the Android APK build-and-publish workflow so the generated debug APK is automatically copied/packaged into the React app’s static public assets under the stable filename frontend/public/assets/primepost.apk, so production deployments always ship the correct APK referenced by ApkDownloadPage (/assets/primepost.apk).",
-      "reqIds": [
-        "REQ-47"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-lightweight-integrity-hint-on-the-public-apk-download-page-frontend-src-pages-public-apkdownloadpage-tsx-that-displays-the-expected-apk-filename-and-a-sha-256-or-at-minimum-the-expected-file-size-in-mb-so-users-can-detect-a-broken-cached-download-before-installing-use-clear-english-user-facing-text",
-      "title": "Add a lightweight integrity hint on the public APK download page (frontend/src/pages/public/ApkDownloadPage.tsx) that displays the expected APK filename and a SHA-256 (or at minimum, the expected file size in MB) so users can detect a broken/cached download before installing; use clear English user-facing text.",
-      "reqIds": [
-        "REQ-48"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-harden-the-android-apk-build-scripts-to-fail-fast-if-the-generated-apk-is-missing-or-suspiciously-small-and-print-the-final-apk-size-and-checksum-to-the-console-output-cover-both-scripts-frontend-scripts-build-android-apk-debug-sh-and-frontend-scripts-build-android-apk-debug-ps1",
-      "title": "Harden the Android APK build scripts to fail fast if the generated APK is missing or suspiciously small, and print the final APK size and checksum to the console output (cover both scripts: frontend/scripts/build-android-apk-debug.sh and frontend/scripts/build-android-apk-debug.ps1).",
-      "reqIds": [
-        "REQ-49"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-file-served-at-the-public-url-path-assets-primepost-apk-is-a-valid-android-apk-not-html-text-and-not-truncated-and-installs-successfully-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
-      "title": "Ensure the file served at the public URL path `/assets/primepost.apk` is a valid Android APK (not HTML/text and not truncated) and installs successfully on Android without the error message “There was a problem parsing the package.”",
-      "reqIds": [
-        "REQ-50"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-verify-and-fix-the-android-apk-build-and-publish-pipeline-so-that-building-the-debug-apk-always-copies-the-newly-generated-frontend-android-app-build-outputs-apk-debug-app-debug-apk-into-frontend-public-assets-primepost-apk-stable-filename-and-deploys-it-as-a-binary-asset-without-corruption",
-      "title": "Verify and fix the Android APK build-and-publish pipeline so that building the debug APK always copies the newly generated `frontend/android/app/build/outputs/apk/debug/app-debug.apk` into `frontend/public/assets/primepost.apk` (stable filename) and deploys it as a binary asset without corruption.",
-      "reqIds": [
-        "REQ-51"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-harden-the-public-apk-download-experience-so-users-can-detect-a-broken-download-before-trying-to-install-it-by-clearly-showing-the-expected-filename-file-size-and-sha-256-from-assets-primepost-apk-meta-json-and-showing-a-clear-english-warning-state-if-metadata-is-missing-or-reports-an-unusually-small-file-size",
-      "title": "Harden the public APK download experience so users can detect a broken download before trying to install it by clearly showing the expected filename, file size, and SHA-256 from `/assets/primepost.apk.meta.json`, and showing a clear English warning state if metadata is missing or reports an unusually small file size.",
-      "reqIds": [
-        "REQ-52"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-fix-the-production-public-apk-artifact-so-that-the-file-downloaded-from-assets-primepost-apk-is-a-real-android-apk-binary-not-an-html-text-fallback-response-and-not-truncated-e-g-405-bytes-so-it-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
-      "title": "Fix the production/public APK artifact so that the file downloaded from `/assets/primepost.apk` is a real Android APK (binary), not an HTML/text fallback response, and not truncated (e.g., ~405 bytes), so it installs on Android without the error message “There was a problem parsing the package.”",
-      "reqIds": [
-        "REQ-53"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-build-and-publish-workflow-so-that-every-production-deployment-explicitly-generates-frontend-public-assets-primepost-apk-and-frontend-public-assets-primepost-apk-meta-json-from-the-latest-android-build-output-and-includes-them-in-the-deployed-frontend-assets-no-stale-cached-missing-apk",
-      "title": "Update the build-and-publish workflow so that every production deployment explicitly generates `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` from the latest Android build output and includes them in the deployed frontend assets (no stale/cached/missing APK).",
-      "reqIds": [
-        "REQ-54"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-automated-verification-step-to-the-android-apk-publish-scripts-frontend-scripts-build-android-apk-debug-sh-and-frontend-scripts-build-android-apk-debug-ps1-that-1-prints-the-local-apk-size-sha-256-and-2-optionally-when-a-base-url-is-provided-via-an-environment-variable-fetches-the-deployed-assets-primepost-apk-and-assets-primepost-apk-meta-json-to-confirm-the-deployed-size-and-sha-256-match-what-was-built-fail-fast-on-mismatch-or-suspiciously-small-deployed-files",
-      "title": "Add an automated verification step to the Android APK publish scripts (`frontend/scripts/build-android-apk-debug.sh` and `frontend/scripts/build-android-apk-debug.ps1`) that (1) prints the local APK size + SHA-256, and (2) optionally (when a base URL is provided via an environment variable) fetches the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` to confirm the deployed size and SHA-256 match what was built; fail fast on mismatch or suspiciously small deployed files.",
-      "reqIds": [
-        "REQ-55"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-improve-the-public-apk-download-ux-to-reduce-accidental-installation-of-broken-downloads-by-explicitly-showing-the-user-the-expected-file-size-and-sha-256-and-adding-english-guidance-that-if-the-downloaded-file-size-is-extremely-small-example-405-b-as-in-the-reported-issue-the-user-should-not-install-it-and-should-re-download-after-the-integrity-panel-shows-a-normal-multi-megabyte-size",
-      "title": "Improve the public APK download UX to reduce accidental installation of broken downloads by explicitly showing the user the expected file size and SHA-256 and adding English guidance that if the downloaded file size is extremely small (example: ~405 B as in the reported issue), the user should not install it and should re-download after the integrity panel shows a normal multi-megabyte size.",
-      "reqIds": [
-        "REQ-56"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-public-url-path-assets-primepost-apk-in-production-serves-the-real-android-apk-binary-a-valid-zip-apk-starting-with-the-pk-header-not-an-html-text-response-and-that-the-downloaded-file-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
-      "title": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
-      "reqIds": [
-        "REQ-57"
       ],
       "version": 1
     }
@@ -447,189 +107,93 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement role-based authentication with separate login and dashboards for Customer, Store Owner/Worker, and Super Admin",
+      "summary": "Mobile-only Flutter app (Android & iOS) with full bilingual (English/French) UI and in-app language switch",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Customer app: store access via Store ID, plus search by name/category and nearby GPS location",
+      "summary": "Role-based authentication with exactly three login options (Customer, Store Owner, Super Admin) and T&C/Privacy checkbox gating Customer/Owner signup",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Customer app: in-store catalog browsing (images, prices, availability), basket/cart with quantity adjustments",
+      "summary": "Sequential non-editable unique 5-digit numeric IDs for Customers and Store Owners, shown in profile, no duplicates",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Customer app: order placement with table number, special notes, payment method (cash or mobile money) and mobile money instructions",
+      "summary": "Security flows: Customer/Owner create 4-digit PIN at registration (hashed), login via PIN, change PIN; Super Admin forced to set password after first login",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-5",
-      "summary": "Real-time order status tracking and notifications (Pending/In Progress/On The Way/Completed) with live updates when owners pick/complete items",
+      "summary": "Profile management for Customer/Owner: update phone, email, optional photo, change PIN, switch language; cannot change 5-digit ID",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-6",
-      "summary": "Customer app: order history, reviews/ratings (1–5 stars), and push notifications",
+      "summary": "Customer shopping flow: access store via Store ID; search stores (name/category/GPS); browse items (price/image/availability); basket with quantity controls; checkout with table #, instructions, payment (cash/mobile money) and show store MoMo number",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-7",
-      "summary": "Store owner app: store registration (unique Store ID), category, location, and mobile money number management",
+      "summary": "Real-time order tracking with statuses (Pending/In Progress/On The Way/Completed) and push notifications; status changes driven by store owner actions",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-8",
-      "summary": "Store owner app: inventory management (CRUD products, images, price, stock qty, out-of-stock), low-stock alerts",
+      "summary": "Store Owner features: register store, manage store details and Mobile Money number; CRUD products with images/prices/stock; low-stock alerts; out-of-stock; order management with notifications and status updates",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-9",
-      "summary": "Store owner app: order management with notifications, item-by-item picking checklist, and status changes (Accept/In Progress/Completed)",
+      "summary": "Marketplace feature: store owners publish promos/discounts/offers; customers browse/search items and filter by nearest location",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-10",
-      "summary": "Marketplace feature: owners publish discounted/sale items; customer marketplace search and filters (nearest, lowest price, category)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-11",
-      "summary": "Admin web dashboard: manage stores/customers, monitor transactions and revenue/commission, block/suspend, analytics (daily/weekly/monthly)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-12",
-      "summary": "Additional features: QR code for Store ID, digital receipts, sales report export (PDF/Excel), dark mode, multi-language support",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-14",
-      "summary": "Create core backend data models and CRUD APIs in the single Motoko actor for: Stores (unique Store ID, name, category, location text, mobile money number, owner principal, status active/blocked), Products (storeId, name, imageRef, price, stockQty, outOfStock flag, discount info, marketplace flag), Orders (storeId, customer principal, items, quantities, tableNumber optional, specialNote, paymentMethod cash/mobileMoney, status), Reviews (storeId, customer principal, rating 1–5, text optional, timestamps).",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-15",
-      "summary": "Bootstrap first Super Admin: provide a secure way to create/assign the initial superAdmin role (first-admin setup flow)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-16",
-      "summary": "Replace/augment Internet Identity auth with user login via profile (name/phone/email) + persistent 4-digit PIN; support biometrics (fingerprint/Face ID) for login and transaction confirmation",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-17",
-      "summary": "First-time signup/onboarding: collect name, phone number, email, date of birth, nationality, and state of residence",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-18",
-      "summary": "Customer first-login must accept Terms & Conditions via checkbox; block access until accepted",
+      "summary": "In-app Super Admin module (no web): view customers/owners, monitor transactions, suspend/block users, analytics summary, manage system settings",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-19",
-      "summary": "Admin dashboard: manage/publish Terms & Conditions content separately for Customer app and Store Owner app (editable text/versioning)",
-      "reqIds": [],
+      "summary": "Ensure checkout supports: basket review, optional table number, special instructions, payment method selection (Cash or Mobile Money), and when Mobile Money is selected, clearly display the store’s registered Mobile Money number before order confirmation.",
+      "reqIds": [
+        "REQ-9"
+      ],
       "status": "pending"
     },
     {
       "id": "AR-20",
-      "summary": "Implement a secure “first super admin bootstrap” flow so the first Super Admin can be set without an existing admin, while preventing arbitrary users from self-assigning superAdmin after initialization.",
+      "summary": "Implement order tracking with statuses (Pending, In Progress, On The Way, Completed) and near-real-time UI updates for both Customer and Store Owner when status changes occur; map Store Owner actions so that ticking items triggers “In Progress” and completing an order triggers “On The Way”, then allow final completion.",
       "reqIds": [
-        "REQ-13"
+        "REQ-10"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-23",
-      "summary": "Create admin-managed Terms & Conditions content storage in the backend with separate content entries for (1) Customer app terms and (2) Store Owner app terms, editable only by super admins.",
+      "id": "AR-21",
+      "summary": "Implement Store Owner store registration and store details management including: store name, category, location, and Mobile Money number; ensure only the owning Store Owner can update their store and blocked stores cannot accept orders.",
       "reqIds": [
-        "REQ-16"
+        "REQ-11"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-24",
-      "summary": "Fix biometric authentication modal/popup so it never blocks app navigation (Skip works; WebAuthn success/failure closes modal) across Customer, Store Owner/Worker, and Admin experiences",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-25",
-      "summary": "Add in-app Privacy Policy: display Privacy Policy to users and provide Admin dashboard capability to view/edit/publish Privacy Policy content (and store effective date/version)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-26",
-      "summary": "Extend the backend legal-documents storage to support a Privacy Policy document in addition to existing Customer Terms and Store Owner Terms, with read access for all users and write access restricted to Super Admins.",
+      "id": "AR-22",
+      "summary": "Implement Store Owner product management including add/edit/delete products, upload product images, set prices, set stock quantity, mark items out of stock, and provide low-stock alerts in the owner UI.",
       "reqIds": [
-        "REQ-23"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-28",
-      "summary": "Seed the backend legal-document storage with the provided Customer Terms & Conditions and Store Owner / Service Provider Terms & Conditions so they exist by default after deployment/upgrade (without requiring a Super Admin to manually publish them first). The stored content must match the user-provided text, with any \"[App Name]\" placeholders replaced with \"PrimePost\".",
-      "reqIds": [
-        "REQ-31"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-33",
-      "summary": "Produce an installable Android build (APK) for PrimePost (package the current app for Android distribution/install)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-34",
-      "summary": "Update auth/onboarding so Super Admin login is not gated by Terms & Conditions acceptance/availability (admin should bypass TermsAcceptance entirely)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-35",
-      "summary": "Provide a single app landing screen with 3 login options (Customer / Store Owner-Worker / Admin) and make the Android APK publicly downloadable",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-37",
-      "summary": "Update the production build/deploy workflow so that every deployment explicitly stages and includes `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` generated from the latest Android build output, preventing missing/stale assets that cause `/assets/primepost.apk` to fall back to an HTML response.",
-      "reqIds": [
-        "REQ-58"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-38",
-      "summary": "Add an automated post-deploy verification step (using the existing optional `DEPLOY_URL` remote verification behavior in the APK build scripts) that checks the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` for size/SHA-256 match and validates the deployed APK header is `PK`; fail the pipeline if the deployed asset is HTML, truncated, or mismatched.",
-      "reqIds": [
-        "REQ-59"
+        "REQ-12"
       ],
       "status": "pending"
     }

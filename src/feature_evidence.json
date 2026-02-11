@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-ensure-the-public-url-path-assets-primepost-apk-in-production-serves-the-real-android-apk-binary-a-valid-zip-apk-starting-with-the-pk-header-not-an-html-text-response-and-that-the-downloaded-file-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
-      "featureTitle": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
+      "featureId": "feature-ensure-the-app-has-exactly-three-role-login-entry-points-on-the-main-screen-customer-store-owner-and-super-admin-with-no-other-login-types-visible-anywhere-in-the-ui",
+      "featureTitle": "Ensure the app has exactly three role login entry points on the main screen: Customer, Store Owner, and Super Admin, with no other login types visible anywhere in the UI.",
       "files": [
-        "frontend/src/pages/public/ApkDownloadPage.tsx",
-        "frontend/src/utils/apkIntegrity.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,7 +18,222 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-57"
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-full-bilingual-english-french-ui-support-across-the-application-including-an-in-app-language-switch-in-settings-profile-and-apply-translations-consistently-to-all-customer-owner-and-admin-screens",
+      "featureTitle": "Implement full bilingual (English/French) UI support across the application, including an in-app language switch in Settings/Profile, and apply translations consistently to all customer, owner, and admin screens.",
+      "files": [
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/i18n/LanguageProvider.tsx",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/fr.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-sequential-unique-non-editable-5-digit-numeric-id-for-every-customer-and-store-owner-00001-00002-generated-automatically-on-first-registration-stored-in-backend-state-and-displayed-in-the-user-profile-ui",
+      "featureTitle": "Add a sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+        "frontend/src/pages/owner/OwnerSettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-enforce-mandatory-acceptance-of-both-terms-conditions-and-privacy-policy-before-a-customer-or-store-owner-can-complete-account-creation-with-super-admin-excluded-from-this-requirement",
+      "featureTitle": "Enforce mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation, with Super Admin excluded from this requirement.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-secure-pin-based-account-security-for-customers-and-store-owners-require-a-4-digit-pin-on-first-registration-store-only-a-hashed-form-use-it-for-future-in-app-unlock-login-gating-and-allow-pin-changes-from-profile-settings",
+      "featureTitle": "Implement secure PIN-based account security for Customers and Store Owners: require a 4-digit PIN on first registration, store only a hashed form, use it for future in-app unlock/login gating, and allow PIN changes from profile/settings.",
+      "files": [
+        "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+        "frontend/src/pages/owner/OwnerSettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-super-admin-first-login-password-setup-allow-first-login-without-an-existing-password-then-force-the-super-admin-to-create-a-password-after-first-login-and-require-that-password-for-future-admin-unlock-login-operations-within-the-app-session",
+      "featureTitle": "Implement Super Admin first-login password setup: allow first login without an existing password, then force the Super Admin to create a password after first login, and require that password for future admin unlock/login operations within the app session.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/admin/AdminSettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-profile-management-for-customers-and-store-owners-to-update-mobile-number-email-address-optional-profile-photo-change-pin-and-switch-language-while-preventing-modification-of-the-assigned-5-digit-user-id",
+      "featureTitle": "Add profile management for Customers and Store Owners to update mobile number, email address, optional profile photo, change PIN, and switch language, while preventing modification of the assigned 5-digit user ID.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+        "frontend/src/pages/owner/OwnerSettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-support-customer-store-discovery-and-access-by-a-entering-store-id-b-searching-by-store-name-c-filtering-by-category-and-d-near-location-filtering-using-device-geolocation-gps-based-when-permission-is-granted",
+      "featureTitle": "Support customer store discovery and access by (a) entering Store ID, (b) searching by store name, (c) filtering by category, and (d) “near location” filtering using device geolocation (GPS-based) when permission is granted.",
+      "files": [
+        "frontend/src/utils/geolocation.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-marketplace-functionality-store-owners-can-publish-promotional-discounted-items-and-special-offers-customers-can-browse-marketplace-search-items-by-name-filter-by-nearest-location-and-view-discounted-items",
+      "featureTitle": "Implement Marketplace functionality: Store Owners can publish promotional/discounted items and special offers; Customers can browse Marketplace, search items by name, filter by nearest location, and view discounted items.",
+      "files": [
+        "frontend/src/utils/geolocation.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-13"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-expand-super-admin-capabilities-inside-the-mobile-app-to-view-all-customers-and-store-owners-monitor-transactions-orders-suspend-block-users-view-an-analytics-summary-and-manage-system-settings",
+      "featureTitle": "Expand Super Admin capabilities inside the mobile app to: view all customers and store owners, monitor transactions/orders, suspend/block users, view an analytics summary, and manage system settings.",
+      "files": [
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/admin/AdminSettingsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-14"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-a-cohesive-mobile-first-visual-theme-for-primepost-across-all-screens-customer-owner-admin-including-typography-spacing-and-component-styling-and-keep-it-consistent-in-both-light-and-dark-modes",
+      "featureTitle": "Apply a cohesive, mobile-first visual theme for PrimePost across all screens (Customer/Owner/Admin), including typography, spacing, and component styling, and keep it consistent in both light and dark modes.",
+      "files": [
+        "frontend/src/components/layout/AppLayout.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-15"
       ],
       "confidence": "high"
     }

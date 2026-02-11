@@ -14,12 +14,15 @@ import CheckoutPage from './pages/customer/CheckoutPage';
 import OrdersPage from './pages/customer/OrdersPage';
 import OrderDetailPage from './pages/customer/OrderDetailPage';
 import MarketplacePage from './pages/customer/MarketplacePage';
+import CustomerSettingsPage from './pages/customer/CustomerSettingsPage';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import StoreRegistrationPage from './pages/owner/StoreRegistrationPage';
 import StoreSettingsPage from './pages/owner/StoreSettingsPage';
 import InventoryPage from './pages/owner/InventoryPage';
 import OrdersManagementPage from './pages/owner/OrdersManagementPage';
+import OwnerSettingsPage from './pages/owner/OwnerSettingsPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AccessDeniedScreen from './components/auth/AccessDeniedScreen';
 import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
 import PinSetupDialog from './components/auth/PinSetupDialog';
@@ -31,6 +34,7 @@ import ApkDownloadPage from './pages/public/ApkDownloadPage';
 import { UserRole, TermsType } from './backend';
 import { useLocalPin } from './hooks/useLocalPin';
 import { useBiometricAuth } from './hooks/useBiometricAuth';
+import { useLanguage } from './i18n/LanguageProvider';
 import React from 'react';
 import { Download } from 'lucide-react';
 
@@ -45,12 +49,10 @@ function RootComponent() {
   const isAuthenticated = !!identity;
   const pinIsSet = isPinSet();
 
-  // Reactive conditions that update immediately when state changes
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && profile === null;
   const showPinSetup = isAuthenticated && !profileLoading && profile !== null && !pinIsSet;
   const showUnlock = isAuthenticated && !profileLoading && profile !== null && pinIsSet && !isUnlocked;
 
-  // Check if we should show biometric enablement dialog after PIN is set
   React.useEffect(() => {
     const checkBiometric = async () => {
       if (isAuthenticated && profile && pinIsSet && isUnlocked && !biometricCheckDone) {
@@ -89,6 +91,7 @@ function IndexComponent() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: profile } = useGetCallerUserProfile();
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     if (identity && profile) {
@@ -103,29 +106,29 @@ function IndexComponent() {
   }, [identity, profile, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <div className="text-center space-y-8 p-8 max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
+      <div className="text-center space-y-8 p-8 max-w-2xl w-full">
         <img src="/assets/generated/primepost-logo.dim_512x512.png" alt="PrimePost" className="w-32 h-32 mx-auto" />
-        <h1 className="text-4xl font-bold">Welcome to PrimePost</h1>
-        <p className="text-muted-foreground text-lg">Choose your role to continue</p>
+        <h1 className="text-4xl font-bold">{t('home.welcome')}</h1>
+        <p className="text-muted-foreground text-lg">{t('home.chooseRole')}</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button 
             onClick={() => navigate({ to: '/login/customer' })} 
             className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition"
           >
-            Customer
+            {t('home.loginAsCustomer')}
           </button>
           <button 
             onClick={() => navigate({ to: '/login/owner' })} 
             className="px-8 py-4 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition"
           >
-            Store
+            {t('home.loginAsStoreOwner')}
           </button>
           <button 
             onClick={() => navigate({ to: '/login/admin' })} 
             className="px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition"
           >
-            Admin
+            {t('home.loginAsSuperAdmin')}
           </button>
         </div>
         <div className="pt-6">
@@ -134,7 +137,7 @@ function IndexComponent() {
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-lg font-medium hover:opacity-90 transition shadow-lg"
           >
             <Download className="w-5 h-5" />
-            Download Android App
+            {t('home.downloadApp')}
           </button>
         </div>
       </div>
@@ -186,20 +189,27 @@ const apkDownloadRoute = createRoute({
 
 function CustomerRouteComponent() {
   const navigate = useNavigate();
-  const { data: profile } = useGetCallerUserProfile();
-  const { data: hasAccepted, isLoading } = useHasAcceptedTerms(TermsType.customerTerms);
+  const { identity } = useInternetIdentity();
+  const { data: profile, isLoading: profileLoading } = useGetCallerUserProfile();
+  const { data: hasAccepted, isLoading: termsLoading } = useHasAcceptedTerms(TermsType.customerTerms);
 
   React.useEffect(() => {
-    if (profile && profile.role === UserRole.customer && !isLoading && hasAccepted === false) {
+    if (!identity && !profileLoading) {
+      navigate({ to: '/login/customer' });
+    }
+  }, [identity, profileLoading, navigate]);
+
+  React.useEffect(() => {
+    if (identity && profile && profile.role === UserRole.customer && !termsLoading && hasAccepted === false) {
       navigate({ to: '/terms/customer' });
     }
-  }, [profile, hasAccepted, isLoading, navigate]);
+  }, [identity, profile, hasAccepted, termsLoading, navigate]);
 
-  if (profile && profile.role !== UserRole.customer) {
+  if (!profileLoading && profile && profile.role !== UserRole.customer) {
     return <AccessDeniedScreen />;
   }
 
-  if (!isLoading && hasAccepted === false) {
+  if (!identity || profileLoading || (!termsLoading && hasAccepted === false)) {
     return null;
   }
 
@@ -220,6 +230,12 @@ const customerDashboardRoute = createRoute({
   getParentRoute: () => customerRoute,
   path: '/',
   component: CustomerDashboard
+});
+
+const customerSettingsRoute = createRoute({
+  getParentRoute: () => customerRoute,
+  path: '/settings',
+  component: CustomerSettingsPage
 });
 
 const storeAccessRoute = createRoute({
@@ -272,20 +288,27 @@ const marketplaceRoute = createRoute({
 
 function OwnerRouteComponent() {
   const navigate = useNavigate();
-  const { data: profile } = useGetCallerUserProfile();
-  const { data: hasAccepted, isLoading } = useHasAcceptedTerms(TermsType.storeOwnerTerms);
+  const { identity } = useInternetIdentity();
+  const { data: profile, isLoading: profileLoading } = useGetCallerUserProfile();
+  const { data: hasAccepted, isLoading: termsLoading } = useHasAcceptedTerms(TermsType.storeOwnerTerms);
 
   React.useEffect(() => {
-    if (profile && profile.role === UserRole.storeOwner && !isLoading && hasAccepted === false) {
+    if (!identity && !profileLoading) {
+      navigate({ to: '/login/owner' });
+    }
+  }, [identity, profileLoading, navigate]);
+
+  React.useEffect(() => {
+    if (identity && profile && profile.role === UserRole.storeOwner && !termsLoading && hasAccepted === false) {
       navigate({ to: '/terms/owner' });
     }
-  }, [profile, hasAccepted, isLoading, navigate]);
+  }, [identity, profile, hasAccepted, termsLoading, navigate]);
 
-  if (profile && profile.role !== UserRole.storeOwner) {
+  if (!profileLoading && profile && profile.role !== UserRole.storeOwner) {
     return <AccessDeniedScreen />;
   }
 
-  if (!isLoading && hasAccepted === false) {
+  if (!identity || profileLoading || (!termsLoading && hasAccepted === false)) {
     return null;
   }
 
@@ -306,6 +329,12 @@ const ownerDashboardRoute = createRoute({
   getParentRoute: () => ownerRoute,
   path: '/',
   component: OwnerDashboard
+});
+
+const ownerSettingsRoute = createRoute({
+  getParentRoute: () => ownerRoute,
+  path: '/settings',
+  component: OwnerSettingsPage
 });
 
 const storeRegistrationRoute = createRoute({
@@ -333,11 +362,22 @@ const ordersManagementRoute = createRoute({
 });
 
 function AdminRouteComponent() {
-  const { data: profile } = useGetCallerUserProfile();
+  const navigate = useNavigate();
+  const { identity } = useInternetIdentity();
+  const { data: profile, isLoading: profileLoading } = useGetCallerUserProfile();
 
-  // Super Admin bypasses all terms checks
-  if (profile && profile.role !== UserRole.superAdmin) {
+  React.useEffect(() => {
+    if (!identity && !profileLoading) {
+      navigate({ to: '/login/admin' });
+    }
+  }, [identity, profileLoading, navigate]);
+
+  if (!profileLoading && profile && profile.role !== UserRole.superAdmin) {
     return <AccessDeniedScreen />;
+  }
+
+  if (!identity || profileLoading) {
+    return null;
   }
 
   return (
@@ -357,6 +397,12 @@ const adminDashboardRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: '/',
   component: AdminDashboard
+});
+
+const adminSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/settings',
+  component: AdminSettingsPage
 });
 
 function TermsCustomerComponent() {
@@ -393,6 +439,7 @@ const routeTree = rootRoute.addChildren([
   apkDownloadRoute,
   customerRoute.addChildren([
     customerDashboardRoute,
+    customerSettingsRoute,
     storeAccessRoute,
     storeSearchRoute,
     storeDetailRoute,
@@ -404,13 +451,15 @@ const routeTree = rootRoute.addChildren([
   ]),
   ownerRoute.addChildren([
     ownerDashboardRoute,
+    ownerSettingsRoute,
     storeRegistrationRoute,
     storeSettingsRoute,
     inventoryRoute,
     ordersManagementRoute
   ]),
   adminRoute.addChildren([
-    adminDashboardRoute
+    adminDashboardRoute,
+    adminSettingsRoute
   ]),
   termsCustomerRoute,
   termsOwnerRoute,

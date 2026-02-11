@@ -5,20 +5,23 @@ import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
+import Nat "mo:core/Nat";
+import Text "mo:core/Text";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
-import Text "mo:core/Text";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
   var superAdminBootstrapped = false;
+  var nextUserId = 1;
 
   // Types
   type StoreId = Text;
@@ -31,6 +34,7 @@ actor {
   };
 
   public type UserProfile = {
+    userId : Text;
     fullName : Text;
     phoneNumber : Text;
     email : Text;
@@ -176,6 +180,20 @@ actor {
     };
   };
 
+  private func generateUserId() : Text {
+    let id = nextUserId;
+    nextUserId += 1;
+    let idText = id.toText();
+    let padding = 5 - idText.size();
+    var result = "";
+    var i = 0;
+    while (i < padding) {
+      result := result # "0";
+      i += 1;
+    };
+    result # idText;
+  };
+
   // Super Admin Bootstrap
   public shared ({ caller }) func bootstrapSuperAdmin() : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -189,6 +207,7 @@ actor {
     AccessControl.assignRole(accessControlState, caller, caller, #admin);
 
     let superAdminProfile : UserProfile = {
+      userId = "super_admin";
       fullName = "";
       phoneNumber = "";
       email = "";
@@ -205,7 +224,48 @@ actor {
     superAdminBootstrapped := true;
   };
 
-  // User Profile Operations
+  public query func getSuperAdminBootstrapped() : async Bool {
+    superAdminBootstrapped;
+  };
+
+  public shared ({ caller }) func clearSuperAdminBootstrapState() : async () {
+    if (not isSuperAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only SuperAdmin can clear bootstrap state");
+    };
+
+    if (not superAdminBootstrapped) {
+      Runtime.trap("SuperAdmin has not been bootstrapped yet");
+    };
+
+    superAdminBootstrapped := false;
+
+    let superAdminPrincipals = userProfiles.entries().toArray().filter(
+      func((_, profile)) { profile.role == #superAdmin }
+    );
+
+    for ((principal, _) in superAdminPrincipals.values()) {
+      userProfiles.remove(principal);
+    };
+  };
+
+  // Factory Reset Method
+  public shared ({ caller }) func factoryReset() : async () {
+    if (not isSuperAdmin(caller)) {
+      Runtime.trap("Unauthorized: Only SuperAdmin can perform a factory reset");
+    };
+
+    userProfiles.clear();
+    stores.clear();
+    products.clear();
+    orders.clear();
+    reviews.clear();
+    termsContent.clear();
+
+    nextOrderId := 0;
+    nextUserId := 1;
+    superAdminBootstrapped := false;
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view profiles");
@@ -214,6 +274,10 @@ actor {
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view profiles");
+    };
+    
     if (caller != user and not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile or be an admin");
     };
@@ -229,36 +293,69 @@ actor {
 
     switch (existingProfile) {
       case (?existing) {
-        if (existing.role == #superAdmin and profile.role != #superAdmin) {
-          Runtime.trap("Unauthorized: Cannot change superAdmin role");
+        // Existing user updating profile
+        if (existing.userId != profile.userId) {
+          Runtime.trap("Unauthorized: Cannot modify user ID");
         };
-        if (existing.role != #superAdmin and profile.role == #superAdmin) {
-          Runtime.trap("Unauthorized: Cannot assign superAdmin role to yourself");
-        };
-      };
-      case (null) {
-        if (profile.role == #superAdmin) {
-          Runtime.trap("Unauthorized: Cannot assign superAdmin role to yourself");
-        };
-      };
-    };
-
-    let finalProfile = switch (existingProfile) {
-      case (?existing) {
+        
         if (existing.role != profile.role) {
           Runtime.trap("Unauthorized: Cannot change your role after initial assignment");
         };
-        profile;
+
+        if (existing.role == #superAdmin and profile.role != #superAdmin) {
+          Runtime.trap("Unauthorized: Cannot change superAdmin role");
+        };
+
+        // For existing users, terms acceptance can only increase, never decrease
+        if (existing.acceptedCustomerTerms and not profile.acceptedCustomerTerms) {
+          Runtime.trap("Unauthorized: Cannot revoke terms acceptance");
+        };
+        if (existing.acceptedStoreOwnerTerms and not profile.acceptedStoreOwnerTerms) {
+          Runtime.trap("Unauthorized: Cannot revoke terms acceptance");
+        };
+
+        userProfiles.add(caller, profile);
       };
       case (null) {
+        // New user registration
+        if (profile.role == #superAdmin) {
+          Runtime.trap("Unauthorized: Cannot assign superAdmin role to yourself");
+        };
+
         if (profile.role != #customer and profile.role != #storeOwner) {
           Runtime.trap("Unauthorized: Can only assign customer or storeOwner role");
         };
-        profile;
+
+        // Enforce mandatory terms acceptance for new users
+        let requiredTermsAccepted = switch (profile.role) {
+          case (#customer) { profile.acceptedCustomerTerms };
+          case (#storeOwner) { profile.acceptedStoreOwnerTerms };
+          case (#superAdmin) { true };
+        };
+
+        if (not requiredTermsAccepted) {
+          Runtime.trap("Unauthorized: Must accept Terms & Conditions before completing registration");
+        };
+
+        // Generate and assign a unique user ID
+        let assignedUserId = generateUserId();
+        let finalProfile : UserProfile = {
+          userId = assignedUserId;
+          fullName = profile.fullName;
+          phoneNumber = profile.phoneNumber;
+          email = profile.email;
+          dateOfBirth = profile.dateOfBirth;
+          nationality = profile.nationality;
+          stateOfResidence = profile.stateOfResidence;
+          role = profile.role;
+          isSuspended = false;
+          acceptedCustomerTerms = profile.acceptedCustomerTerms;
+          acceptedStoreOwnerTerms = profile.acceptedStoreOwnerTerms;
+        };
+
+        userProfiles.add(caller, finalProfile);
       };
     };
-
-    userProfiles.add(caller, finalProfile);
   };
 
   // Terms & Conditions Operations
@@ -267,7 +364,6 @@ actor {
       Runtime.trap("Unauthorized: Only super admins can save terms content");
     };
 
-    // Replace [App Name] placeholder with PrimePost
     let processedContent = content.replace(#text "[App Name]", "PrimePost");
     termsContent.add(termsType, processedContent);
   };
@@ -301,7 +397,7 @@ actor {
         };
       };
       case (#privacyPolicy) {
-        Runtime.trap("Accepting privacy policy is not applicable");
+        Runtime.trap("Privacy policy acceptance is handled during registration");
       };
     };
 
@@ -354,7 +450,7 @@ actor {
       Runtime.trap("Unauthorized: Must accept Store Owner Terms & Conditions before creating stores");
     };
 
-    let id = name.concat("_").concat(mobileMoneyNumber : Text);
+    let id = name # "_" # mobileMoneyNumber;
     let store : Store = {
       id;
       name;
@@ -368,7 +464,7 @@ actor {
     id;
   };
 
-  public query ({ caller }) func getStore(id : StoreId) : async ?Store {
+  public query func getStore(id : StoreId) : async ?Store {
     stores.get(id);
   };
 
@@ -379,6 +475,10 @@ actor {
     location : Text,
     mobileMoneyNumber : Text,
   ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can update stores");
+    };
+
     if (not isStoreOwnerOf(caller, id)) {
       Runtime.trap("Unauthorized: Only the store owner can update this store");
     };
@@ -407,6 +507,10 @@ actor {
   };
 
   public query ({ caller }) func getMyStores() : async [Store] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view their stores");
+    };
+
     if (not isStoreOwner(caller)) {
       Runtime.trap("Unauthorized: Only store owners can view their stores");
     };
@@ -422,6 +526,10 @@ actor {
     price : Nat,
     stockQty : Nat,
   ) : async ProductId {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can create products");
+    };
+
     if (not isStoreOwnerOf(caller, storeId)) {
       Runtime.trap("Unauthorized: Only the store owner can create products");
     };
@@ -441,7 +549,7 @@ actor {
       };
     };
 
-    let id = name.concat("_").concat(storeId : Text);
+    let id = name # "_" # storeId;
     let product : Product = {
       id;
       storeId;
@@ -466,6 +574,10 @@ actor {
     discount : ?Nat,
     marketplace : Bool,
   ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can update products");
+    };
+
     if (not isProductOwner(caller, id)) {
       Runtime.trap("Unauthorized: Only the product owner can update this product");
     };
@@ -496,6 +608,10 @@ actor {
   };
 
   public shared ({ caller }) func deleteProduct(id : ProductId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can delete products");
+    };
+
     if (not isProductOwner(caller, id)) {
       Runtime.trap("Unauthorized: Only the product owner can delete this product");
     };
@@ -507,7 +623,7 @@ actor {
     products.remove(id);
   };
 
-  public query ({ caller }) func getStoreProducts(storeId : StoreId) : async [Product] {
+  public query func getStoreProducts(storeId : StoreId) : async [Product] {
     products.values().toArray().filter(func(p) { p.storeId == storeId });
   };
 
@@ -558,6 +674,10 @@ actor {
   };
 
   public query ({ caller }) func getMyOrders() : async [Order] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view orders");
+    };
+
     if (not isCustomer(caller)) {
       Runtime.trap("Unauthorized: Only customers can view their orders");
     };
@@ -566,6 +686,10 @@ actor {
   };
 
   public query ({ caller }) func getStoreOrders(storeId : StoreId) : async [Order] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view store orders");
+    };
+
     if (not isStoreOwnerOf(caller, storeId)) {
       Runtime.trap("Unauthorized: Only the store owner can view store orders");
     };
@@ -574,6 +698,10 @@ actor {
   };
 
   public shared ({ caller }) func updateOrderStatus(orderId : Nat, status : { #pending; #inProgress; #onTheWay; #completed }) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can update order status");
+    };
+
     if (not isOrderOwner(caller, orderId)) {
       Runtime.trap("Unauthorized: Only the store owner can update order status");
     };
@@ -604,6 +732,10 @@ actor {
 
   // Review Operations
   public shared ({ caller }) func submitReview(storeId : StoreId, rating : Nat, text : ?Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can submit reviews");
+    };
+
     if (not isCustomer(caller)) {
       Runtime.trap("Unauthorized: Only customers can submit reviews");
     };
@@ -636,12 +768,12 @@ actor {
     reviews.add(review);
   };
 
-  public query ({ caller }) func getStoreReviews(storeId : StoreId) : async [Review] {
+  public query func getStoreReviews(storeId : StoreId) : async [Review] {
     reviews.filter<Review>(func(r) { r.storeId == storeId }).toArray();
   };
 
-  // Marketplace Operations
-  public query ({ caller }) func getMarketplaceProducts() : async [Product] {
+  // Marketplace Operations - Public access for browsing
+  public query func getMarketplaceProducts() : async [Product] {
     products.values().toArray().filter(
       func(p) {
         p.marketplace and not p.outOfStock and
@@ -655,6 +787,10 @@ actor {
 
   // Super Admin Operations
   public query ({ caller }) func getAllStores() : async [Store] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view all stores");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can view all stores");
     };
@@ -663,6 +799,10 @@ actor {
   };
 
   public query ({ caller }) func getAllCustomers() : async [Principal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view all customers");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can view all customers");
     };
@@ -673,6 +813,10 @@ actor {
   };
 
   public query ({ caller }) func getAllOrders() : async [Order] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view all orders");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can view all orders");
     };
@@ -681,6 +825,10 @@ actor {
   };
 
   public shared ({ caller }) func blockStore(storeId : StoreId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can block stores");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can block stores");
     };
@@ -705,6 +853,10 @@ actor {
   };
 
   public shared ({ caller }) func unblockStore(storeId : StoreId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can unblock stores");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can unblock stores");
     };
@@ -729,6 +881,10 @@ actor {
   };
 
   public shared ({ caller }) func suspendCustomer(customer : Principal) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can suspend customers");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can suspend customers");
     };
@@ -739,6 +895,7 @@ actor {
           Runtime.trap("Can only suspend customers");
         };
         let updatedProfile : UserProfile = {
+          userId = profile.userId;
           fullName = profile.fullName;
           phoneNumber = profile.phoneNumber;
           email = profile.email;
@@ -759,6 +916,10 @@ actor {
   };
 
   public shared ({ caller }) func unsuspendCustomer(customer : Principal) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can unsuspend customers");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can unsuspend customers");
     };
@@ -766,6 +927,7 @@ actor {
     switch (userProfiles.get(customer)) {
       case (?profile) {
         let updatedProfile : UserProfile = {
+          userId = profile.userId;
           fullName = profile.fullName;
           phoneNumber = profile.phoneNumber;
           email = profile.email;
@@ -785,4 +947,3 @@ actor {
     };
   };
 };
-

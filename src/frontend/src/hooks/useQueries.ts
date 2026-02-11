@@ -41,11 +41,70 @@ export function useSaveCallerUserProfile() {
 
 export function useBootstrapSuperAdmin() {
   const { actor } = useActor();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
       return actor.bootstrapSuperAdmin();
+    },
+    onSuccess: () => {
+      // Invalidate both bootstrap status and profile after successful bootstrap
+      queryClient.invalidateQueries({ queryKey: ['superAdminBootstrapped'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+export function useGetSuperAdminBootstrapped() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  const query = useQuery<boolean>({
+    queryKey: ['superAdminBootstrapped'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getSuperAdminBootstrapped();
+    },
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
+  };
+}
+
+export function useClearSuperAdminBootstrapState() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.clearSuperAdminBootstrapState();
+    },
+    onSuccess: () => {
+      // Invalidate bootstrap status and profile to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['superAdminBootstrapped'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+  });
+}
+
+export function useFactoryReset() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.factoryReset();
+    },
+    onSuccess: () => {
+      // Clear all cached queries after factory reset
+      queryClient.clear();
     },
   });
 }

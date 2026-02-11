@@ -103,6 +103,7 @@ export interface Product {
 export interface UserProfile {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -190,9 +191,11 @@ export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole__1): Promise<void>;
     blockStore(storeId: StoreId): Promise<void>;
     bootstrapSuperAdmin(): Promise<void>;
+    clearSuperAdminBootstrapState(): Promise<void>;
     createProduct(storeId: StoreId, name: string, imageRef: ExternalBlob, price: bigint, stockQty: bigint): Promise<ProductId>;
     createStore(name: string, category: string, location: string, mobileMoneyNumber: string): Promise<StoreId>;
     deleteProduct(id: ProductId): Promise<void>;
+    factoryReset(): Promise<void>;
     getAllCustomers(): Promise<Array<Principal>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllStores(): Promise<Array<Store>>;
@@ -205,6 +208,7 @@ export interface backendInterface {
     getStoreOrders(storeId: StoreId): Promise<Array<Order>>;
     getStoreProducts(storeId: StoreId): Promise<Array<Product>>;
     getStoreReviews(storeId: StoreId): Promise<Array<Review>>;
+    getSuperAdminBootstrapped(): Promise<boolean>;
     getTermsContent(termsType: TermsType): Promise<string | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     hasAcceptedTerms(arg0: {
@@ -381,6 +385,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async clearSuperAdminBootstrapState(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clearSuperAdminBootstrapState();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.clearSuperAdminBootstrapState();
+            return result;
+        }
+    }
     async createProduct(arg0: StoreId, arg1: string, arg2: ExternalBlob, arg3: bigint, arg4: bigint): Promise<ProductId> {
         if (this.processError) {
             try {
@@ -420,6 +438,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteProduct(arg0);
+            return result;
+        }
+    }
+    async factoryReset(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.factoryReset();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.factoryReset();
             return result;
         }
     }
@@ -589,6 +621,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getStoreReviews(arg0);
             return from_candid_vec_n32(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getSuperAdminBootstrapped(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSuperAdminBootstrapped();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSuperAdminBootstrapped();
+            return result;
         }
     }
     async getTermsContent(arg0: TermsType): Promise<string | null> {
@@ -874,6 +920,7 @@ function from_candid_record_n16(_uploadFile: (file: ExternalBlob) => Promise<Uin
 function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: _UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -885,6 +932,7 @@ function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }): {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -897,6 +945,7 @@ function from_candid_record_n22(_uploadFile: (file: ExternalBlob) => Promise<Uin
     return {
         acceptedStoreOwnerTerms: value.acceptedStoreOwnerTerms,
         dateOfBirth: value.dateOfBirth,
+        userId: value.userId,
         role: from_candid_UserRole_n23(_uploadFile, _downloadFile, value.role),
         stateOfResidence: value.stateOfResidence,
         fullName: value.fullName,
@@ -1057,6 +1106,7 @@ function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function to_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -1068,6 +1118,7 @@ function to_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 }): {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: _UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -1080,6 +1131,7 @@ function to_candid_record_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     return {
         acceptedStoreOwnerTerms: value.acceptedStoreOwnerTerms,
         dateOfBirth: value.dateOfBirth,
+        userId: value.userId,
         role: to_candid_UserRole_n40(_uploadFile, _downloadFile, value.role),
         stateOfResidence: value.stateOfResidence,
         fullName: value.fullName,

@@ -60,6 +60,7 @@ export type TermsType = { 'storeOwnerTerms' : null } |
 export interface UserProfile {
   'acceptedStoreOwnerTerms' : boolean,
   'dateOfBirth' : string,
+  'userId' : string,
   'role' : UserRole,
   'stateOfResidence' : string,
   'fullName' : string,
@@ -107,12 +108,14 @@ export interface _SERVICE {
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole__1], undefined>,
   'blockStore' : ActorMethod<[StoreId], undefined>,
   'bootstrapSuperAdmin' : ActorMethod<[], undefined>,
+  'clearSuperAdminBootstrapState' : ActorMethod<[], undefined>,
   'createProduct' : ActorMethod<
     [StoreId, string, ExternalBlob, bigint, bigint],
     ProductId
   >,
   'createStore' : ActorMethod<[string, string, string, string], StoreId>,
   'deleteProduct' : ActorMethod<[ProductId], undefined>,
+  'factoryReset' : ActorMethod<[], undefined>,
   'getAllCustomers' : ActorMethod<[], Array<Principal>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllStores' : ActorMethod<[], Array<Store>>,
@@ -125,6 +128,7 @@ export interface _SERVICE {
   'getStoreOrders' : ActorMethod<[StoreId], Array<Order>>,
   'getStoreProducts' : ActorMethod<[StoreId], Array<Product>>,
   'getStoreReviews' : ActorMethod<[StoreId], Array<Review>>,
+  'getSuperAdminBootstrapped' : ActorMethod<[], boolean>,
   'getTermsContent' : ActorMethod<[TermsType], [] | [string]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'hasAcceptedTerms' : ActorMethod<[{ 'termsType' : TermsType }], boolean>,

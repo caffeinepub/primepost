@@ -28,6 +28,7 @@ export interface Product {
 export interface UserProfile {
     acceptedStoreOwnerTerms: boolean;
     dateOfBirth: string;
+    userId: string;
     role: UserRole;
     stateOfResidence: string;
     fullName: string;
@@ -97,9 +98,11 @@ export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole__1): Promise<void>;
     blockStore(storeId: StoreId): Promise<void>;
     bootstrapSuperAdmin(): Promise<void>;
+    clearSuperAdminBootstrapState(): Promise<void>;
     createProduct(storeId: StoreId, name: string, imageRef: ExternalBlob, price: bigint, stockQty: bigint): Promise<ProductId>;
     createStore(name: string, category: string, location: string, mobileMoneyNumber: string): Promise<StoreId>;
     deleteProduct(id: ProductId): Promise<void>;
+    factoryReset(): Promise<void>;
     getAllCustomers(): Promise<Array<Principal>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllStores(): Promise<Array<Store>>;
@@ -112,6 +115,7 @@ export interface backendInterface {
     getStoreOrders(storeId: StoreId): Promise<Array<Order>>;
     getStoreProducts(storeId: StoreId): Promise<Array<Product>>;
     getStoreReviews(storeId: StoreId): Promise<Array<Review>>;
+    getSuperAdminBootstrapped(): Promise<boolean>;
     getTermsContent(termsType: TermsType): Promise<string | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     hasAcceptedTerms(arg0: {

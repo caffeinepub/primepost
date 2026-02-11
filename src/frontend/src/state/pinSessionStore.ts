@@ -39,6 +39,11 @@ class PinSessionStore {
     this.notify();
   }
 
+  reset(): void {
+    this.state = { pinSet: false, unlocked: false };
+    this.notify();
+  }
+
   private notify(): void {
     this.listeners.forEach(listener => listener());
   }

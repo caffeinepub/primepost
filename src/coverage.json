@@ -1,50 +1,241 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T13:26:31.274Z",
+  "generatedAt": "2026-02-11T22:35:48.930Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 1,
+    "total": 15,
+    "implemented": 11,
     "items": [
       {
-        "id": "REQ-57",
-        "summary": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
+        "id": "REQ-1",
+        "summary": "Ensure the app has exactly three role login entry points on the main screen: Customer, Store Owner, and Super Admin, with no other login types visible anywhere in the UI.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/apkIntegrity.ts",
-          "frontend/src/pages/public/ApkDownloadPage.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/auth/RoleLoginPage.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/components/auth/AccessDeniedScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/apkIntegrity.ts",
-          "frontend/src/pages/public/ApkDownloadPage.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
         ]
       },
       {
-        "id": "REQ-58",
-        "summary": "Update the production build/deploy workflow so that every deployment explicitly stages and includes `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` generated from the latest Android build output, preventing missing/stale assets that cause `/assets/primepost.apk` to fall back to an HTML response.",
+        "id": "REQ-10",
+        "summary": "Implement order tracking with statuses (Pending, In Progress, On The Way, Completed) and near-real-time UI updates for both Customer and Store Owner when status changes occur; map Store Owner actions so that ticking items triggers “In Progress” and completing an order triggers “On The Way”, then allow final completion.",
         "status": "missing",
         "plannedFiles": [
-          "frontend/scripts/stage-android-apk-assets.sh",
-          "frontend/scripts/stage-android-apk-assets.ps1",
-          "frontend/scripts/build-android-apk-debug.sh",
-          "frontend/scripts/build-android-apk-debug.ps1",
-          "frontend/docs/android-apk-build.md"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/useOrderStatusNotifications.ts",
+          "frontend/src/pages/customer/OrdersPage.tsx",
+          "frontend/src/pages/customer/OrderDetailPage.tsx",
+          "frontend/src/pages/owner/OrdersManagementPage.tsx"
         ],
         "matchedFiles": []
       },
       {
-        "id": "REQ-59",
-        "summary": "Add an automated post-deploy verification step (using the existing optional `DEPLOY_URL` remote verification behavior in the APK build scripts) that checks the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` for size/SHA-256 match and validates the deployed APK header is `PK`; fail the pipeline if the deployed asset is HTML, truncated, or mismatched.",
+        "id": "REQ-11",
+        "summary": "Implement Store Owner store registration and store details management including: store name, category, location, and Mobile Money number; ensure only the owning Store Owner can update their store and blocked stores cannot accept orders.",
         "status": "missing",
         "plannedFiles": [
-          "frontend/scripts/build-android-apk-debug.sh",
-          "frontend/scripts/build-android-apk-debug.ps1",
-          "frontend/scripts/stage-android-apk-assets.sh",
-          "frontend/scripts/stage-android-apk-assets.ps1"
+          "frontend/src/pages/owner/StoreRegistrationPage.tsx",
+          "frontend/src/pages/owner/StoreSettingsPage.tsx",
+          "frontend/src/pages/customer/StoreDetailPage.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-12",
+        "summary": "Implement Store Owner product management including add/edit/delete products, upload product images, set prices, set stock quantity, mark items out of stock, and provide low-stock alerts in the owner UI.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/pages/owner/InventoryPage.tsx",
+          "frontend/src/pages/customer/StoreDetailPage.tsx",
+          "frontend/src/hooks/useLowStockAlerts.ts"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-13",
+        "summary": "Implement Marketplace functionality: Store Owners can publish promotional/discounted items and special offers; Customers can browse Marketplace, search items by name, filter by nearest location, and view discounted items.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/owner/InventoryPage.tsx",
+          "frontend/src/pages/customer/MarketplacePage.tsx",
+          "frontend/src/utils/geolocation.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/geolocation.ts"
+        ]
+      },
+      {
+        "id": "REQ-14",
+        "summary": "Expand Super Admin capabilities inside the mobile app to: view all customers and store owners, monitor transactions/orders, suspend/block users, view an analytics summary, and manage system settings.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/admin/AdminDashboard.tsx",
+          "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "frontend/src/pages/admin/AdminSettingsPage.tsx",
+          "frontend/src/components/layout/AppLayout.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/admin/AdminSettingsPage.tsx",
+          "frontend/src/components/layout/AppLayout.tsx"
+        ]
+      },
+      {
+        "id": "REQ-15",
+        "summary": "Apply a cohesive, mobile-first visual theme for PrimePost across all screens (Customer/Owner/Admin), including typography, spacing, and component styling, and keep it consistent in both light and dark modes.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/pages/customer/CustomerDashboard.tsx",
+          "frontend/src/pages/owner/OwnerDashboard.tsx",
+          "frontend/src/pages/admin/AdminDashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/layout/AppLayout.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Implement full bilingual (English/French) UI support across the application, including an in-app language switch in Settings/Profile, and apply translations consistently to all customer, owner, and admin screens.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/i18n/i18n.ts",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/fr.ts",
+          "frontend/src/i18n/LanguageProvider.tsx",
+          "frontend/src/main.tsx",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/pages/auth/RoleLoginPage.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx",
+          "frontend/src/pages/customer/StoreSearchPage.tsx",
+          "frontend/src/pages/customer/MarketplacePage.tsx",
+          "frontend/src/pages/customer/OrdersPage.tsx",
+          "frontend/src/pages/admin/AdminDashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/fr.ts",
+          "frontend/src/i18n/LanguageProvider.tsx",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add a sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/layout/AppLayout.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/layout/AppLayout.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Enforce mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation, with Super Admin excluded from this requirement.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+          "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Implement secure PIN-based account security for Customers and Store Owners: require a 4-digit PIN on first registration, store only a hashed form, use it for future in-app unlock/login gating, and allow PIN changes from profile/settings.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/PinSetupDialog.tsx",
+          "frontend/src/components/auth/UnlockDialog.tsx",
+          "frontend/src/hooks/useLocalPin.ts",
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Implement Super Admin first-login password setup: allow first login without an existing password, then force the Super Admin to create a password after first login, and require that password for future admin unlock/login operations within the app session.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/admin/AdminSettingsPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/pages/auth/RoleLoginPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/admin/AdminSettingsPage.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/layout/AppLayout.tsx"
+        ]
+      },
+      {
+        "id": "REQ-7",
+        "summary": "Add profile management for Customers and Store Owners to update mobile number, email address, optional profile photo, change PIN, and switch language, while preventing modification of the assigned 5-digit user ID.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+          "frontend/src/pages/owner/OwnerSettingsPage.tsx",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-8",
+        "summary": "Support customer store discovery and access by (a) entering Store ID, (b) searching by store name, (c) filtering by category, and (d) “near location” filtering using device geolocation (GPS-based) when permission is granted.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/customer/StoreSearchPage.tsx",
+          "frontend/src/utils/geolocation.ts",
+          "frontend/src/pages/customer/StoreAccessPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/geolocation.ts"
+        ]
+      },
+      {
+        "id": "REQ-9",
+        "summary": "Ensure checkout supports: basket review, optional table number, special instructions, payment method selection (Cash or Mobile Money), and when Mobile Money is selected, clearly display the store’s registered Mobile Money number before order confirmation.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/pages/customer/CheckoutPage.tsx",
+          "frontend/src/pages/customer/CartPage.tsx"
         ],
         "matchedFiles": []
       }
@@ -52,12 +243,25 @@
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/pages/public/ApkDownloadPage.tsx",
-    "frontend/src/utils/apkIntegrity.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/components/layout/AppLayout.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/i18n/LanguageProvider.tsx",
+    "frontend/src/i18n/translations/en.ts",
+    "frontend/src/i18n/translations/fr.ts",
+    "frontend/src/pages/admin/AdminSettingsPage.tsx",
+    "frontend/src/pages/customer/CustomerSettingsPage.tsx",
+    "frontend/src/pages/owner/OwnerSettingsPage.tsx",
+    "frontend/src/utils/geolocation.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
