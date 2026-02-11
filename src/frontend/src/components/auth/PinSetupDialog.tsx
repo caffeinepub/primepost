@@ -3,16 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useLocalPin } from '../../hooks/useLocalPin';
-import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { toast } from 'sonner';
-import { Fingerprint } from 'lucide-react';
 
 export default function PinSetupDialog() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  const [step, setStep] = useState<'setup' | 'confirm' | 'biometric'>('setup');
+  const [step, setStep] = useState<'setup' | 'confirm'>('setup');
   const { setPin: savePin } = useLocalPin();
-  const { canUseBiometrics, enableBiometrics } = useBiometricAuth();
 
   const handleSetupComplete = () => {
     if (pin.length !== 4) {
@@ -31,54 +28,7 @@ export default function PinSetupDialog() {
 
     savePin(pin);
     toast.success('PIN set successfully!');
-
-    if (canUseBiometrics()) {
-      setStep('biometric');
-    }
   };
-
-  const handleEnableBiometrics = async () => {
-    try {
-      await enableBiometrics();
-      toast.success('Biometric authentication enabled!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to enable biometrics');
-    }
-  };
-
-  const handleSkipBiometrics = () => {
-    // Dialog will close automatically when PIN is set
-  };
-
-  if (step === 'biometric') {
-    return (
-      <Dialog open={true}>
-        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>Enable Biometric Authentication</DialogTitle>
-            <DialogDescription>
-              Use fingerprint or face recognition for faster access
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <Fingerprint className="w-10 h-10 text-primary" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Button onClick={handleEnableBiometrics} className="w-full">
-                Enable Biometric Authentication
-              </Button>
-              <Button onClick={handleSkipBiometrics} variant="outline" className="w-full">
-                Skip for Now
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={true}>

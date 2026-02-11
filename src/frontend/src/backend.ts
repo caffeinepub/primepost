@@ -153,6 +153,7 @@ export interface Review {
 }
 export enum TermsType {
     storeOwnerTerms = "storeOwnerTerms",
+    privacyPolicy = "privacyPolicy",
     customerTerms = "customerTerms"
 }
 export enum UserRole {
@@ -1101,10 +1102,14 @@ function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 function to_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TermsType): {
     storeOwnerTerms: null;
 } | {
+    privacyPolicy: null;
+} | {
     customerTerms: null;
 } {
     return value == TermsType.storeOwnerTerms ? {
         storeOwnerTerms: null
+    } : value == TermsType.privacyPolicy ? {
+        privacyPolicy: null
     } : value == TermsType.customerTerms ? {
         customerTerms: null
     } : value;

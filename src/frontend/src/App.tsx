@@ -23,21 +23,44 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AccessDeniedScreen from './components/auth/AccessDeniedScreen';
 import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
 import PinSetupDialog from './components/auth/PinSetupDialog';
+import BiometricEnablementDialog from './components/auth/BiometricEnablementDialog';
 import UnlockDialog from './components/auth/UnlockDialog';
 import TermsAcceptancePage from './pages/terms/TermsAcceptancePage';
+import PrivacyPolicyPage from './pages/terms/PrivacyPolicyPage';
 import { UserRole, TermsType } from './backend';
 import { useLocalPin } from './hooks/useLocalPin';
+import { useBiometricAuth } from './hooks/useBiometricAuth';
 import React from 'react';
 
 function RootComponent() {
   const { identity } = useInternetIdentity();
   const { data: profile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const { isPinSet, isUnlocked } = useLocalPin();
+  const { canUseBiometrics, isBiometricsEnabled } = useBiometricAuth();
+  const [showBiometricDialog, setShowBiometricDialog] = React.useState(false);
+  const [biometricCheckDone, setBiometricCheckDone] = React.useState(false);
+
   const isAuthenticated = !!identity;
+  const pinIsSet = isPinSet();
 
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && profile === null;
-  const showPinSetup = isAuthenticated && !profileLoading && profile !== null && !isPinSet();
-  const showUnlock = isAuthenticated && !profileLoading && profile !== null && isPinSet() && !isUnlocked;
+  const showPinSetup = isAuthenticated && !profileLoading && profile !== null && !pinIsSet;
+  const showUnlock = isAuthenticated && !profileLoading && profile !== null && pinIsSet && !isUnlocked;
+
+  // Check if we should show biometric enablement dialog after PIN is set
+  React.useEffect(() => {
+    const checkBiometric = async () => {
+      if (isAuthenticated && profile && pinIsSet && isUnlocked && !biometricCheckDone) {
+        const canUse = await canUseBiometrics();
+        if (canUse && !isBiometricsEnabled()) {
+          setShowBiometricDialog(true);
+        }
+        setBiometricCheckDone(true);
+      }
+    };
+
+    checkBiometric();
+  }, [isAuthenticated, profile, pinIsSet, isUnlocked, biometricCheckDone, canUseBiometrics, isBiometricsEnabled]);
 
   return (
     <>
@@ -45,6 +68,12 @@ function RootComponent() {
       {showProfileSetup && <ProfileSetupDialog />}
       {showPinSetup && <PinSetupDialog />}
       {showUnlock && <UnlockDialog />}
+      {showBiometricDialog && (
+        <BiometricEnablementDialog 
+          open={showBiometricDialog} 
+          onClose={() => setShowBiometricDialog(false)} 
+        />
+      )}
     </>
   );
 }
@@ -278,12 +307,14 @@ const ordersManagementRoute = createRoute({
 
 function AdminRouteComponent() {
   const { data: profile } = useGetCallerUserProfile();
+
   if (profile && profile.role !== UserRole.superAdmin) {
     return <AccessDeniedScreen />;
   }
+
   return (
     <AppLayout role="admin">
-      <AdminDashboard />
+      <Outlet />
     </AppLayout>
   );
 }
@@ -292,6 +323,12 @@ const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
   component: AdminRouteComponent
+});
+
+const adminDashboardRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/',
+  component: AdminDashboard
 });
 
 function TermsCustomerComponent() {
@@ -314,13 +351,17 @@ const termsOwnerRoute = createRoute({
   component: TermsOwnerComponent
 });
 
+const privacyPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/privacy-policy',
+  component: PrivacyPolicyPage
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginCustomerRoute,
   loginOwnerRoute,
   loginAdminRoute,
-  termsCustomerRoute,
-  termsOwnerRoute,
   customerRoute.addChildren([
     customerDashboardRoute,
     storeAccessRoute,
@@ -330,16 +371,21 @@ const routeTree = rootRoute.addChildren([
     checkoutRoute,
     ordersRoute,
     orderDetailRoute,
-    marketplaceRoute
+    marketplaceRoute,
   ]),
   ownerRoute.addChildren([
     ownerDashboardRoute,
     storeRegistrationRoute,
     storeSettingsRoute,
     inventoryRoute,
-    ordersManagementRoute
+    ordersManagementRoute,
   ]),
-  adminRoute
+  adminRoute.addChildren([
+    adminDashboardRoute,
+  ]),
+  termsCustomerRoute,
+  termsOwnerRoute,
+  privacyPolicyRoute,
 ]);
 
 const router = createRouter({ routeTree });

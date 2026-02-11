@@ -16,31 +16,47 @@ export async function createCredential(challenge: BufferSource) {
     throw new Error('WebAuthn is not supported');
   }
 
-  const credential = await navigator.credentials.create({
-    publicKey: {
-      challenge,
-      rp: {
-        name: 'PrimePost',
-        id: window.location.hostname,
-      },
-      user: {
-        id: new Uint8Array(16),
-        name: 'user@primepost',
-        displayName: 'PrimePost User',
-      },
-      pubKeyCredParams: [
-        { alg: -7, type: 'public-key' },
-        { alg: -257, type: 'public-key' },
-      ],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform',
-        userVerification: 'required',
-      },
-      timeout: 60000,
-    },
-  });
+  const platformAvailable = await isPlatformAuthenticatorAvailable();
+  if (!platformAvailable) {
+    throw new Error('Platform authenticator is not available');
+  }
 
-  return credential as PublicKeyCredential;
+  try {
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: {
+          name: 'PrimePost',
+          id: window.location.hostname,
+        },
+        user: {
+          id: new Uint8Array(16),
+          name: 'user@primepost',
+          displayName: 'PrimePost User',
+        },
+        pubKeyCredParams: [
+          { alg: -7, type: 'public-key' },
+          { alg: -257, type: 'public-key' },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+        },
+        timeout: 60000,
+      },
+    });
+
+    if (!credential) {
+      throw new Error('Failed to create credential');
+    }
+
+    return credential as PublicKeyCredential;
+  } catch (error: any) {
+    if (error.name === 'NotAllowedError') {
+      throw new Error('User cancelled the operation');
+    }
+    throw error;
+  }
 }
 
 export async function getCredential(challenge: BufferSource, credentialId: BufferSource) {
@@ -48,17 +64,28 @@ export async function getCredential(challenge: BufferSource, credentialId: Buffe
     throw new Error('WebAuthn is not supported');
   }
 
-  const assertion = await navigator.credentials.get({
-    publicKey: {
-      challenge,
-      allowCredentials: [{
-        id: credentialId,
-        type: 'public-key',
-      }],
-      userVerification: 'required',
-      timeout: 60000,
-    },
-  });
+  try {
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{
+          id: credentialId,
+          type: 'public-key',
+        }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
 
-  return assertion as PublicKeyCredential;
+    if (!assertion) {
+      throw new Error('Authentication failed');
+    }
+
+    return assertion as PublicKeyCredential;
+  } catch (error: any) {
+    if (error.name === 'NotAllowedError') {
+      throw new Error('User cancelled the operation');
+    }
+    throw error;
+  }
 }

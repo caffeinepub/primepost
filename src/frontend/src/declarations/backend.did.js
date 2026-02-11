@@ -21,6 +21,7 @@ export const _CaffeineStorageRefillResult = IDL.Record({
 });
 export const TermsType = IDL.Variant({
   'storeOwnerTerms' : IDL.Null,
+  'privacyPolicy' : IDL.Null,
   'customerTerms' : IDL.Null,
 });
 export const UserRole__1 = IDL.Variant({
@@ -227,6 +228,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const TermsType = IDL.Variant({
     'storeOwnerTerms' : IDL.Null,
+    'privacyPolicy' : IDL.Null,
     'customerTerms' : IDL.Null,
   });
   const UserRole__1 = IDL.Variant({

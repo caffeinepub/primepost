@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const PIN_STORAGE_KEY = 'primepost_pin_hash';
 const UNLOCK_SESSION_KEY = 'primepost_unlocked';
@@ -14,18 +14,34 @@ function hashPin(pin: string): string {
 }
 
 export function useLocalPin() {
+  const [pinSet, setPinSet] = useState(() => {
+    return localStorage.getItem(PIN_STORAGE_KEY) !== null;
+  });
+
   const [isUnlocked, setIsUnlocked] = useState(() => {
     return sessionStorage.getItem(UNLOCK_SESSION_KEY) === 'true';
   });
 
-  const isPinSet = useCallback(() => {
-    return localStorage.getItem(PIN_STORAGE_KEY) !== null;
+  // Listen for storage changes to keep state in sync
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPinSet(localStorage.getItem(PIN_STORAGE_KEY) !== null);
+      setIsUnlocked(sessionStorage.getItem(UNLOCK_SESSION_KEY) === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  const isPinSet = useCallback(() => {
+    return pinSet;
+  }, [pinSet]);
 
   const setPin = useCallback((pin: string) => {
     const hashed = hashPin(pin);
     localStorage.setItem(PIN_STORAGE_KEY, hashed);
     sessionStorage.setItem(UNLOCK_SESSION_KEY, 'true');
+    setPinSet(true);
     setIsUnlocked(true);
   }, []);
 

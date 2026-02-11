@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { isWebAuthnAvailable, isPlatformAuthenticatorAvailable } from '../utils/webauthn';
 
 const BIOMETRIC_ENABLED_KEY = 'primepost_biometric_enabled';
 const CREDENTIAL_ID_KEY = 'primepost_credential_id';
@@ -8,8 +9,16 @@ export function useBiometricAuth() {
     return localStorage.getItem(BIOMETRIC_ENABLED_KEY) === 'true';
   });
 
-  const canUseBiometrics = useCallback((): boolean => {
-    return !!(window.PublicKeyCredential && navigator.credentials);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const canUseBiometrics = useCallback(async (): Promise<boolean> => {
+    try {
+      const available = await isWebAuthnAvailable();
+      if (!available) return false;
+      return await isPlatformAuthenticatorAvailable();
+    } catch {
+      return false;
+    }
   }, []);
 
   const isBiometricsEnabled = useCallback((): boolean => {
@@ -17,9 +26,16 @@ export function useBiometricAuth() {
   }, [isEnabled]);
 
   const enableBiometrics = useCallback(async () => {
-    if (!canUseBiometrics()) {
+    if (isProcessing) {
+      throw new Error('Biometric operation already in progress');
+    }
+
+    const canUse = await canUseBiometrics();
+    if (!canUse) {
       throw new Error('Biometric authentication is not supported on this device');
     }
+
+    setIsProcessing(true);
 
     try {
       const challenge = new Uint8Array(32);
@@ -47,22 +63,37 @@ export function useBiometricAuth() {
           },
           timeout: 60000,
         },
-      }) as PublicKeyCredential;
+      }) as PublicKeyCredential | null;
 
       if (credential) {
         localStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
         localStorage.setItem(CREDENTIAL_ID_KEY, btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
         setIsEnabled(true);
+      } else {
+        throw new Error('Failed to create credential');
       }
     } catch (error: any) {
+      // Handle user cancellation gracefully
+      if (error.name === 'NotAllowedError') {
+        throw new Error('Biometric authentication was cancelled');
+      }
       throw new Error(error.message || 'Failed to enable biometric authentication');
+    } finally {
+      setIsProcessing(false);
     }
-  }, [canUseBiometrics]);
+  }, [canUseBiometrics, isProcessing]);
 
   const verifyBiometrics = useCallback(async () => {
-    if (!canUseBiometrics() || !isEnabled) {
+    if (isProcessing) {
+      throw new Error('Biometric operation already in progress');
+    }
+
+    const canUse = await canUseBiometrics();
+    if (!canUse || !isEnabled) {
       throw new Error('Biometric authentication is not available');
     }
+
+    setIsProcessing(true);
 
     try {
       const challenge = new Uint8Array(32);
@@ -91,14 +122,21 @@ export function useBiometricAuth() {
         throw new Error('Authentication failed');
       }
     } catch (error: any) {
+      // Handle user cancellation gracefully
+      if (error.name === 'NotAllowedError') {
+        throw new Error('Biometric authentication was cancelled');
+      }
       throw new Error(error.message || 'Biometric authentication failed');
+    } finally {
+      setIsProcessing(false);
     }
-  }, [canUseBiometrics, isEnabled]);
+  }, [canUseBiometrics, isEnabled, isProcessing]);
 
   return {
     canUseBiometrics,
     isBiometricsEnabled,
     enableBiometrics,
     verifyBiometrics,
+    isProcessing,
   };
 }

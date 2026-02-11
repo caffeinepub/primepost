@@ -1,153 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Onboarding profile expansion, local PIN/biometric unlock, and Terms & Conditions management",
+  "title": "PrimePost legal documents: publish provided Terms text and add Privacy Policy UI",
   "requirements": [
     {
-      "id": "REQ-14",
-      "summary": "Expand first-time onboarding profile UI to collect and save full profile fields required by the updated UserProfile shape.",
+      "id": "REQ-24",
+      "summary": "Provide a frontend publishing path to set the exact user-provided Customer Terms, Store Owner Terms, and Privacy Policy text (with [App Name] replaced by PrimePost) using existing legal-document save capability.",
       "acceptanceCriteria": [
-        "Profile setup UI collects full name, phone number, email, date of birth, nationality, and state of residence and validates required inputs are non-empty.",
-        "Saving onboarding data uses the updated UserProfile fields expected by the backend actor.",
-        "Existing UI that reads role/name continues to display a user-friendly name via a frontend fallback (fullName preferred)."
+        "Customer Terms content shown in the app matches the provided text, including \"Effective Date: 15 April 2026\" and \"Platform: PrimePost\", and does not contain \"[App Name]\".",
+        "Store Owner / Service Provider Terms content shown in the app matches the provided text and does not contain \"[App Name]\" (leave \"Effective Date: [Insert Date]\" as-is unless the user supplies a date).",
+        "Privacy Policy content shown in the app matches the provided text, including \"Operated by: WeMove All\", \"Country: Cameroon\", and \"PrimePost7@gmail.com\".",
+        "If the canister already has existing legal content in stable state, the upgrade path preserves existing content unless it is empty/unset (use conditional migration policy if schema changes are required)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "operation": "modify",
-          "description": "Update the onboarding modal to collect fullName, phoneNumber, email, dateOfBirth, nationality, and stateOfResidence; validate required fields; and save the expanded UserProfile to the backend. Use the authorization component’s profile-setup guidance as the reference for first-login flow; verify the component's usage instructions before implementing."
+          "path": "frontend/src/legal/providedLegalText.ts",
+          "operation": "create",
+          "description": "Add exported constants for the three user-provided legal documents (Customer Terms, Store Owner Terms, Privacy Policy) with the placeholder token \"[App Name]\" replaced by \"PrimePost\" wherever it appears; keep the text exactly as provided otherwise."
         },
         {
-          "path": "frontend/src/utils/userProfile.ts",
-          "operation": "create",
-          "description": "Add small utilities to read a display name safely (prefer profile.fullName, fall back to legacy profile.name if present) to preserve compatibility with any existing UI assumptions after the profile shape change."
+          "path": "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "operation": "modify",
+          "description": "Add an admin-only helper action (e.g., a button with a clear confirmation) that publishes the provided legal texts by calling the existing save capability for TermsType.customerTerms, TermsType.storeOwnerTerms, and TermsType.privacyPolicy using the constants from frontend/src/legal/providedLegalText.ts; show success/error toasts for the bulk publish operation."
         }
       ]
     },
     {
-      "id": "REQ-15",
-      "summary": "Gate customer/owner areas behind explicit Terms & Conditions acceptance on first login, with clear handling when terms content is missing.",
+      "id": "REQ-25",
+      "summary": "Add a user-facing Privacy Policy screen that displays stored Privacy Policy text with the same scroll/readability treatment as the existing TermsAcceptancePage and is reachable from all roles via a \"Privacy Policy\" link.",
       "acceptanceCriteria": [
-        "Customer users without accepted Customer terms are blocked from /customer routes until acceptance is completed.",
-        "Store Owner users without accepted Store Owner terms are blocked from /owner routes until acceptance is completed.",
-        "If terms content is missing, the acceptance UI shows a clear message and does not allow acceptance."
+        "A new route exists that displays the Privacy Policy content in a scrollable container with preserved whitespace (similar to terms display).",
+        "The Privacy Policy screen handles the \"content missing\" state with a clear English error message.",
+        "Users can navigate to the Privacy Policy screen from within the app UI regardless of role (customer/owner/admin)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add React Query hooks for retrieving terms content, checking acceptance, and accepting terms using existing backend functions. Ensure queries are identity/actor-aware and errors are surfaced to the UI (authorization traps handled gracefully)."
-        },
-        {
-          "path": "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+          "path": "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
           "operation": "create",
-          "description": "Create a shared Terms & Conditions acceptance screen that: loads the correct terms content by type (Customer vs Store Owner), displays it in English, requires a checkbox to enable acceptance, and blocks acceptance if content is missing/unpublished."
+          "description": "Create a PrivacyPolicyPage that queries TermsType.privacyPolicy via the existing terms query hook and renders it in a scrollable container with whitespace preserved (matching TermsAcceptancePage treatment); include a clear English message when content is missing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Wire the Terms acceptance page into the router and add route-guard logic for /customer and /owner: if authenticated and profile role matches but acceptance is missing, redirect to the appropriate acceptance route before rendering protected content. Use role-based access patterns aligned with the authorization component; verify the component's usage instructions before implementing."
+          "description": "Register a new route (e.g., /privacy-policy) under the root router that renders the new PrivacyPolicyPage so it is accessible regardless of role."
+        },
+        {
+          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Add a visible in-app navigation entry or footer link labeled \"Privacy Policy\" that navigates to the new privacy policy route for customer, owner, and admin layouts."
         }
       ]
     },
     {
-      "id": "REQ-17",
-      "summary": "Add a super-admin Terms & Conditions editor section in the Admin dashboard to view/edit/publish Customer and Store Owner terms.",
+      "id": "REQ-26",
+      "summary": "Extend the Super Admin legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside existing terms editors and ensure React Query cache is refreshed after save.",
       "acceptanceCriteria": [
-        "Admin dashboard includes a clearly labeled Terms & Conditions section with separate editors for Customer terms and Store Owner terms.",
-        "Saving shows success/failure feedback and reloading reflects the latest saved content.",
-        "Non-admin users cannot access the admin terms editor UI."
+        "Admin Dashboard includes a visible section/tab to manage \"Privacy Policy\" content.",
+        "Privacy Policy editor supports loading current content, editing in a textarea, and saving updates with success/error toasts.",
+        "Saving Privacy Policy invalidates/refetches the relevant React Query cache so the latest content appears immediately after save."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/admin/TermsManagementPanel.tsx",
-          "operation": "create",
-          "description": "Implement an admin-only Terms management panel with two editors (Customer and Store Owner) that load current content, allow editing in English, and save via backend calls with success/failure feedback. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminDashboard.tsx",
           "operation": "modify",
-          "description": "Add a new 'Terms & Conditions' tab/section and render the TermsManagementPanel within the existing Admin dashboard UI. Keep the existing super-admin route guard as the source of truth for access control (authorization component patterns); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add/extend mutations for saving terms content and queries for fetching terms content to support the Admin Terms editor, with appropriate cache invalidation on save."
-        }
-      ]
-    },
-    {
-      "id": "REQ-18",
-      "summary": "Add client-local 4-digit PIN setup, device-local unlock gating, and PIN re-check before checkout confirmation while keeping Internet Identity as the account identity.",
-      "acceptanceCriteria": [
-        "After Internet Identity authentication and profile creation, the app requires setting a 4-digit PIN (with confirmation) before proceeding.",
-        "On subsequent opens, if already authenticated, the app requires PIN entry to unlock before showing protected areas.",
-        "Checkout confirmation requires a PIN re-check before order submission.",
-        "PIN is stored only on the client device (not in the backend).",
-        "All PIN-related UI copy is in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useLocalPin.ts",
-          "operation": "create",
-          "description": "Create a hook to manage device-local PIN state: set PIN (with confirmation handled in UI), verify PIN, persist a derived representation locally (e.g., hashed) and track an 'unlocked' flag per session. Do not send/store the PIN in the backend."
-        },
-        {
-          "path": "frontend/src/components/auth/PinSetupDialog.tsx",
-          "operation": "create",
-          "description": "Create a modal dialog prompting the user to set and confirm a 4-digit PIN after profile creation. Copy must be English. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/UnlockDialog.tsx",
-          "operation": "create",
-          "description": "Create a modal dialog that blocks access until the user enters the correct 4-digit PIN to unlock the app for the current session. Copy must be English. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Integrate PIN setup and unlock gating into the root flow: after profile exists require PIN setup; on subsequent loads require unlock before rendering protected areas. Ensure this is an additional local verification layer that does not replace Internet Identity. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/CheckoutPage.tsx",
-          "operation": "modify",
-          "description": "Before allowing 'Confirm Order' submission, require a local PIN re-check prompt and only proceed to place the order after successful verification (English UI copy)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-19",
-      "summary": "Add optional biometric unlock/confirmation using WebAuthn platform authenticators with PIN fallback.",
-      "acceptanceCriteria": [
-        "If a compatible platform authenticator is available, the UI offers an option to enable biometric unlock/confirmation; otherwise only PIN is shown.",
-        "If biometric auth fails or is canceled, users can proceed by entering the 4-digit PIN.",
-        "Biometric credentials remain on-device via browser APIs and are not sent to or stored in the backend.",
-        "All biometric-related UI copy is in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/webauthn.ts",
-          "operation": "create",
-          "description": "Add minimal WebAuthn helpers to detect platform authenticator availability and perform create/get credential flows for on-device biometric verification (store only local identifiers/flags as needed)."
-        },
-        {
-          "path": "frontend/src/hooks/useBiometricAuth.ts",
-          "operation": "create",
-          "description": "Create a hook that wraps the WebAuthn helpers, manages local enablement state, and exposes 'canUseBiometrics', 'enableBiometrics', and 'verifyBiometrics' with graceful fallback behavior."
-        },
-        {
-          "path": "frontend/src/components/auth/PinSetupDialog.tsx",
-          "operation": "modify",
-          "description": "When supported, offer an English-labeled option to enable biometric unlock after PIN setup (WebAuthn platform authenticators), while keeping PIN as the fallback. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/UnlockDialog.tsx",
-          "operation": "modify",
-          "description": "If biometrics are enabled and supported, offer a biometric unlock button; on failure/cancel, keep PIN entry available as fallback. Copy must be English. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/CheckoutPage.tsx",
-          "operation": "modify",
-          "description": "For 'Confirm Order', allow biometric confirmation when available/enabled; if biometric fails/cancels, fall back to PIN re-check before submission."
+          "description": "Add a third tab/section for \"Privacy Policy\" that uses useGetTermsContent(TermsType.privacyPolicy) to load current content into a textarea and uses useSaveTermsContent to save updates; keep toast messaging in English and rely on the existing React Query invalidation in the save hook to refresh the displayed content immediately."
         }
       ]
     }

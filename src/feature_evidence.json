@@ -2,55 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-extend-the-user-profile-data-model-to-store-first-time-onboarding-fields-full-name-phone-number-email-date-of-birth-nationality-and-state-of-residence",
-      "featureTitle": "Extend the user profile data model to store first-time onboarding fields: full name, phone number, email, date of birth, nationality, and state of residence.",
-      "files": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx",
-        "frontend/src/utils/userProfile.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-14"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-terms-conditions-acceptance-tracking-so-that-on-first-login-customers-must-explicitly-accept-the-customer-terms-conditions-via-a-checkbox-before-gaining-access-to-customer-pages-store-owners-must-similarly-be-able-to-accept-store-owner-terms-conditions-before-using-owner-pages",
-      "featureTitle": "Add Terms & Conditions acceptance tracking so that, on first login, Customers must explicitly accept the Customer Terms & Conditions via a checkbox before gaining access to customer pages; Store Owners must similarly be able to accept Store Owner Terms & Conditions before using owner pages.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/terms/TermsAcceptancePage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-15"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-an-admin-ui-section-to-view-and-edit-publish-terms-conditions-for-customers-and-store-owners-english-user-facing-text-and-save-changes-to-the-backend-using-the-super-admin-s-identity",
-      "featureTitle": "Add an Admin UI section to view and edit/publish Terms & Conditions for Customers and Store Owners (English user-facing text), and save changes to the backend using the super admin’s identity.",
+      "featureId": "feature-publish-the-user-provided-legal-text-in-the-app-by-setting-the-stored-content-for-1-customer-terms-conditions-2-store-owner-service-provider-terms-conditions-and-3-privacy-policy-exactly-as-provided-by-the-user-with-the-placeholder-token-app-name-replaced-with-primepost-wherever-it-appears",
+      "featureTitle": "Publish the user-provided legal text in the app by setting the stored content for (1) Customer Terms & Conditions, (2) Store Owner / Service Provider Terms & Conditions, and (3) Privacy Policy exactly as provided by the user, with the placeholder token \"[App Name]\" replaced with \"PrimePost\" wherever it appears.",
       "files": [
         "frontend/src/components/admin/TermsManagementPanel.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminDashboard.tsx"
+        "frontend/src/legal/providedLegalText.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -62,19 +18,17 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-17"
+        "REQ-24"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-a-4-digit-pin-setup-and-device-local-unlock-step-that-users-can-use-all-the-time-to-re-enter-the-app-and-to-confirm-transactions-keep-internet-identity-as-the-account-identity-with-pin-acting-as-an-additional-local-verification-layer",
-      "featureTitle": "Implement a 4-digit PIN setup and device-local “unlock” step that users can use ‘all the time’ to re-enter the app and to confirm transactions; keep Internet Identity as the account identity, with PIN acting as an additional local verification layer.",
+      "featureId": "feature-add-a-user-facing-privacy-policy-screen-in-the-frontend-that-renders-the-stored-privacy-policy-text-with-the-same-readability-scrolling-treatment-used-by-the-existing-termsacceptancepage-and-make-it-reachable-from-all-roles-customer-store-owner-worker-super-admin-via-an-in-app-navigation-entry-or-footer-link-labeled-privacy-policy",
+      "featureTitle": "Add a user-facing Privacy Policy screen in the frontend that renders the stored Privacy Policy text with the same readability/scrolling treatment used by the existing TermsAcceptancePage, and make it reachable from all roles (Customer, Store Owner/Worker, Super Admin) via an in-app navigation entry or footer link labeled \"Privacy Policy\".",
       "files": [
         "frontend/src/App.tsx",
-        "frontend/src/components/auth/PinSetupDialog.tsx",
-        "frontend/src/components/auth/UnlockDialog.tsx",
-        "frontend/src/hooks/useLocalPin.ts",
-        "frontend/src/pages/customer/CheckoutPage.tsx"
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/terms/PrivacyPolicyPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -86,19 +40,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-18"
+        "REQ-25"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-optional-biometric-authentication-support-for-unlock-transaction-confirmation-when-the-browser-device-supports-it-e-g-via-webauthn-platform-authenticators-with-a-fallback-to-the-4-digit-pin-when-biometrics-are-unavailable-or-fail",
-      "featureTitle": "Add optional biometric authentication support for unlock/transaction confirmation when the browser/device supports it (e.g., via WebAuthn platform authenticators), with a fallback to the 4-digit PIN when biometrics are unavailable or fail.",
+      "featureId": "feature-update-the-super-admin-dashboard-legal-documents-management-ui-to-include-a-privacy-policy-editor-view-edit-save-alongside-the-existing-customer-terms-and-store-owner-terms-editors",
+      "featureTitle": "Update the Super Admin dashboard legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside the existing Customer Terms and Store Owner Terms editors.",
       "files": [
-        "frontend/src/components/auth/PinSetupDialog.tsx",
-        "frontend/src/components/auth/UnlockDialog.tsx",
-        "frontend/src/hooks/useBiometricAuth.ts",
-        "frontend/src/pages/customer/CheckoutPage.tsx",
-        "frontend/src/utils/webauthn.ts"
+        "frontend/src/components/admin/TermsManagementPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -110,7 +60,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-19"
+        "REQ-26"
       ],
       "confidence": "high"
     }

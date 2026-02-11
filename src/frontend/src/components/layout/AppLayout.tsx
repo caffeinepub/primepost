@@ -4,7 +4,7 @@ import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '../theme/ThemeToggle';
-import { Store, ShoppingCart, Package, LayoutDashboard, Search, TrendingUp, LogOut, Menu } from 'lucide-react';
+import { Store, ShoppingCart, Package, LayoutDashboard, Search, TrendingUp, LogOut, Menu, Shield } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface AppLayoutProps {
@@ -102,17 +102,26 @@ export default function AppLayout({ children, role }: AppLayoutProps) {
         {children}
       </main>
       <footer className="border-t py-6 bg-card">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} PrimePost. Built with ❤️ using{' '}
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground"
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+            <p>© {new Date().getFullYear()} PrimePost. Built with ❤️ using{' '}
+              <a
+                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground"
+              >
+                caffeine.ai
+              </a>
+            </p>
+            <button
+              onClick={() => navigate({ to: '/privacy-policy' })}
+              className="flex items-center gap-1 hover:text-foreground transition"
             >
-              caffeine.ai
-            </a>
-          </p>
+              <Shield className="h-3 w-3" />
+              Privacy Policy
+            </button>
+          </div>
         </div>
       </footer>
     </div>

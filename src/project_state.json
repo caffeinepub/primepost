@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 5,
-  "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, adding first-time user onboarding, PIN/biometric-based login, and admin-managed Terms & Conditions acceptance flows.",
+  "projectStateVersion": 9,
+  "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, including first-time user onboarding, PIN/biometric-based login, and admin-managed legal documents (Terms & Conditions + Privacy Policy) presented in-app.",
   "architectural_notes": [
     "Project name: PrimePost.",
     "Clients: Flutter mobile apps (Customer + Store Owner/Worker) for iOS/Android; React web app for Admin dashboard.",
@@ -11,9 +11,12 @@
     "Payments: Mobile Money integration (e.g., MTN, Orange).",
     "Note: mentions 'floater technology' as a build constraint/requirement (unclear definition).",
     "Auth direction change: users should sign up with name/phone/email and use a persistent 4-digit PIN, with optional biometric (fingerprint/Face ID) support for login and transaction confirmation (not Internet Identity-only).",
-    "Add admin-managed Terms & Conditions documents (separate for Customer and Store Owner apps) and require first-login acceptance for customers."
+    "Add admin-managed Terms & Conditions documents (separate for Customer and Store Owner apps) and require first-login acceptance for customers.",
+    "Biometric/WebAuthn prompts must be non-blocking: always allow Skip, handle cancel/failure/success by closing the modal and continuing the flow; apply consistently across all app roles (Customer, Owner/Worker, Admin)."
   ],
-  "known_issues": [],
+  "known_issues": [
+    "Login/onboarding can get stuck on the biometric enablement popup: Skip button non-responsive and fingerprint prompt completion does not advance; reported across Customer, Owner/Worker, and Admin experiences (notably on Android/WebAuthn)."
+  ],
   "isFixRequest": false,
   "existing_features": [
     {
@@ -143,6 +146,54 @@
         "REQ-19"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-pin-setup-flow-so-the-enable-biometric-authentication-step-can-never-block-app-navigation-clicking-skip-for-now-closing-the-dialog-or-completing-the-biometric-prompt-must-always-allow-the-user-to-continue-into-the-app-customer-store-owner-worker-and-admin",
+      "title": "Update the PIN setup flow so the “Enable Biometric Authentication” step can never block app navigation: clicking “Skip for Now”, closing the dialog, or completing the biometric prompt must always allow the user to continue into the app (Customer, Store Owner/Worker, and Admin).",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-local-pin-setup-state-reactive-so-the-app-correctly-stops-rendering-the-pin-setup-dialog-immediately-after-a-pin-is-saved-without-requiring-a-page-refresh",
+      "title": "Make local PIN setup state reactive so the app correctly stops rendering the PIN setup dialog immediately after a PIN is saved, without requiring a page refresh.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-webauthn-biometric-enable-verify-flows-to-prevent-ui-dead-ends-ensure-all-webauthn-calls-resolve-into-a-success-failure-outcome-that-the-ui-handles-and-prevent-double-submission-while-a-biometric-prompt-is-in-progress",
+      "title": "Harden WebAuthn biometric enable/verify flows to prevent UI dead-ends: ensure all WebAuthn calls resolve into a success/failure outcome that the UI handles, and prevent double-submission while a biometric prompt is in progress.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-publish-the-user-provided-legal-text-in-the-app-by-setting-the-stored-content-for-1-customer-terms-conditions-2-store-owner-service-provider-terms-conditions-and-3-privacy-policy-exactly-as-provided-by-the-user-with-the-placeholder-token-app-name-replaced-with-primepost-wherever-it-appears",
+      "title": "Publish the user-provided legal text in the app by setting the stored content for (1) Customer Terms & Conditions, (2) Store Owner / Service Provider Terms & Conditions, and (3) Privacy Policy exactly as provided by the user, with the placeholder token \"[App Name]\" replaced with \"PrimePost\" wherever it appears.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-user-facing-privacy-policy-screen-in-the-frontend-that-renders-the-stored-privacy-policy-text-with-the-same-readability-scrolling-treatment-used-by-the-existing-termsacceptancepage-and-make-it-reachable-from-all-roles-customer-store-owner-worker-super-admin-via-an-in-app-navigation-entry-or-footer-link-labeled-privacy-policy",
+      "title": "Add a user-facing Privacy Policy screen in the frontend that renders the stored Privacy Policy text with the same readability/scrolling treatment used by the existing TermsAcceptancePage, and make it reachable from all roles (Customer, Store Owner/Worker, Super Admin) via an in-app navigation entry or footer link labeled \"Privacy Policy\".",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-super-admin-dashboard-legal-documents-management-ui-to-include-a-privacy-policy-editor-view-edit-save-alongside-the-existing-customer-terms-and-store-owner-terms-editors",
+      "title": "Update the Super Admin dashboard legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside the existing Customer Terms and Store Owner Terms editors.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -269,6 +320,26 @@
       "summary": "Create admin-managed Terms & Conditions content storage in the backend with separate content entries for (1) Customer app terms and (2) Store Owner app terms, editable only by super admins.",
       "reqIds": [
         "REQ-16"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Fix biometric authentication modal/popup so it never blocks app navigation (Skip works; WebAuthn success/failure closes modal) across Customer, Store Owner/Worker, and Admin experiences",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Add in-app Privacy Policy: display Privacy Policy to users and provide Admin dashboard capability to view/edit/publish Privacy Policy content (and store effective date/version)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Extend the backend legal-documents storage to support a Privacy Policy document in addition to existing Customer Terms and Store Owner Terms, with read access for all users and write access restricted to Super Admins.",
+      "reqIds": [
+        "REQ-23"
       ],
       "status": "pending"
     }

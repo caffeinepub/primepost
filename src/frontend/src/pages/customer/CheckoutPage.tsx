@@ -25,14 +25,14 @@ export default function CheckoutPage() {
   const { items, getStoreTotal, clearCart } = useCartStore();
   const placeOrderMutation = usePlaceOrder();
   const { verifyPin } = useLocalPin();
-  const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics } = useBiometricAuth();
+  const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics, isProcessing } = useBiometricAuth();
 
   const [tableNumber, setTableNumber] = useState('');
   const [specialNote, setSpecialNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mobileMoney'>('cash');
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [pin, setPin] = useState('');
-  const [showBiometric, setShowBiometric] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const storeItems = items[storeId] || [];
   const total = getStoreTotal(storeId);
@@ -49,33 +49,6 @@ export default function CheckoutPage() {
       </Card>
     );
   }
-
-  const handleBiometricConfirm = async () => {
-    try {
-      await verifyBiometrics();
-      await submitOrder();
-    } catch (error: any) {
-      toast.error('Biometric authentication failed');
-      setShowBiometric(false);
-      setShowPinDialog(true);
-    }
-  };
-
-  const handlePinConfirm = () => {
-    if (pin.length !== 4) {
-      toast.error('PIN must be 4 digits');
-      return;
-    }
-
-    if (!verifyPin(pin)) {
-      toast.error('Incorrect PIN');
-      setPin('');
-      return;
-    }
-
-    setShowPinDialog(false);
-    submitOrder();
-  };
 
   const submitOrder = async () => {
     try {
@@ -101,11 +74,46 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleBiometricConfirm = async () => {
+    if (isAuthenticating || isProcessing) return;
+
+    setIsAuthenticating(true);
+    try {
+      await verifyBiometrics();
+      await submitOrder();
+    } catch (error: any) {
+      if (error.message.includes('cancelled')) {
+        toast.info('Authentication cancelled');
+      } else {
+        toast.error('Biometric authentication failed');
+      }
+      setShowPinDialog(true);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handlePinConfirm = () => {
+    if (pin.length !== 4) {
+      toast.error('PIN must be 4 digits');
+      return;
+    }
+
+    if (!verifyPin(pin)) {
+      toast.error('Incorrect PIN');
+      setPin('');
+      return;
+    }
+
+    setShowPinDialog(false);
+    submitOrder();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (canUseBiometrics() && isBiometricsEnabled()) {
-      setShowBiometric(true);
+    const canUse = await canUseBiometrics();
+    if (canUse && isBiometricsEnabled()) {
       await handleBiometricConfirm();
     } else {
       setShowPinDialog(true);
@@ -199,8 +207,13 @@ export default function CheckoutPage() {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" size="lg" disabled={placeOrderMutation.isPending}>
-            {placeOrderMutation.isPending ? 'Placing Order...' : 'Confirm Order'}
+          <Button 
+            type="submit" 
+            className="w-full" 
+            size="lg" 
+            disabled={placeOrderMutation.isPending || isAuthenticating || isProcessing}
+          >
+            {placeOrderMutation.isPending ? 'Placing Order...' : isAuthenticating ? 'Authenticating...' : 'Confirm Order'}
           </Button>
         </form>
       </div>

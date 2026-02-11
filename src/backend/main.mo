@@ -46,11 +46,13 @@ actor {
   public type TermsType = {
     #customerTerms;
     #storeOwnerTerms;
+    #privacyPolicy;
   };
 
   public type TermsContent = {
     customerTerms : Text;
     storeOwnerTerms : Text;
+    privacyPolicy : Text;
   };
 
   type Store = {
@@ -96,11 +98,14 @@ actor {
 
   module TermsType {
     public func compare(a : TermsType, b : TermsType) : Order.Order {
-      switch (a, b) {
-        case (#customerTerms, #storeOwnerTerms) { #less };
-        case (#storeOwnerTerms, #customerTerms) { #greater };
-        case (_, _) { #equal };
+      func typeToNat(t : TermsType) : Nat {
+        switch (t) {
+          case (#customerTerms) { 0 };
+          case (#storeOwnerTerms) { 1 };
+          case (#privacyPolicy) { 2 };
+        };
       };
+      Nat.compare(typeToNat(a), typeToNat(b));
     };
   };
 
@@ -163,7 +168,7 @@ actor {
         switch (requiredRole) {
           case (#customer) { profile.acceptedCustomerTerms };
           case (#storeOwner) { profile.acceptedStoreOwnerTerms };
-          case (#superAdmin) { true }; // Super admins don't need to accept terms
+          case (#superAdmin) { true };
         };
       };
       case (null) { false };
@@ -180,10 +185,8 @@ actor {
       Runtime.trap("SuperAdmin has already been bootstrapped");
     };
 
-    // Grant admin role in access control system
     AccessControl.assignRole(accessControlState, caller, caller, #admin);
 
-    // Create super admin profile
     let superAdminProfile : UserProfile = {
       fullName = "";
       phoneNumber = "";
@@ -221,10 +224,8 @@ actor {
       Runtime.trap("Unauthorized: Only authenticated users can save profiles");
     };
 
-    // Get existing profile to check role changes
     let existingProfile = userProfiles.get(caller);
 
-    // Prevent any changes to superAdmin role
     switch (existingProfile) {
       case (?existing) {
         if (existing.role == #superAdmin and profile.role != #superAdmin) {
@@ -235,25 +236,20 @@ actor {
         };
       };
       case (null) {
-        // New profile - prevent self-assignment of superAdmin
         if (profile.role == #superAdmin) {
           Runtime.trap("Unauthorized: Cannot assign superAdmin role to yourself");
         };
       };
     };
 
-    // For new profiles, only allow customer or storeOwner roles
-    // Existing users can only update their profile data, not change roles
     let finalProfile = switch (existingProfile) {
       case (?existing) {
-        // Prevent role changes after initial assignment
         if (existing.role != profile.role) {
           Runtime.trap("Unauthorized: Cannot change your role after initial assignment");
         };
         profile;
       };
       case (null) {
-        // New profile - validate role is customer or storeOwner
         if (profile.role != #customer and profile.role != #storeOwner) {
           Runtime.trap("Unauthorized: Can only assign customer or storeOwner role");
         };
@@ -270,11 +266,12 @@ actor {
       Runtime.trap("Unauthorized: Only super admins can save terms content");
     };
 
-    termsContent.add(termsType, content);
+    // Replace [App Name] placeholder with PrimePost
+    let processedContent = content.replace(#text("[App Name]"), "PrimePost");
+    termsContent.add(termsType, processedContent);
   };
 
   public query ({ caller }) func getTermsContent(termsType : TermsType) : async ?Text {
-    // Anyone can read terms content (needed for display before acceptance)
     termsContent.get(termsType);
   };
 
@@ -288,7 +285,6 @@ actor {
       case (null) { Runtime.trap("User profile not found") };
     };
 
-    // Verify user has the appropriate role for the terms they're accepting
     switch (termsType) {
       case (#customerTerms) {
         if (callerProfile.role != #customer) {
@@ -300,6 +296,9 @@ actor {
           Runtime.trap("Unauthorized: Only store owners can accept store owner terms");
         };
       };
+      case (#privacyPolicy) {
+        Runtime.trap("Accepting privacy policy is not applicable");
+      };
     };
 
     let updatedProfile : UserProfile = switch (termsType) {
@@ -309,6 +308,7 @@ actor {
       case (#storeOwnerTerms) {
         { callerProfile with acceptedStoreOwnerTerms = true };
       };
+      case (#privacyPolicy) { callerProfile };
     };
 
     userProfiles.add(caller, updatedProfile);
@@ -327,6 +327,7 @@ actor {
     switch (termsType) {
       case (#customerTerms) { callerProfile.acceptedCustomerTerms };
       case (#storeOwnerTerms) { callerProfile.acceptedStoreOwnerTerms };
+      case (#privacyPolicy) { false };
     };
   };
 
@@ -364,7 +365,6 @@ actor {
   };
 
   public query ({ caller }) func getStore(id : StoreId) : async ?Store {
-    // Anyone can view store information
     stores.get(id);
   };
 
@@ -504,7 +504,6 @@ actor {
   };
 
   public query ({ caller }) func getStoreProducts(storeId : StoreId) : async [Product] {
-    // Anyone can view products
     products.values().toArray().filter(func(p) { p.storeId == storeId });
   };
 
@@ -613,7 +612,6 @@ actor {
       Runtime.trap("Rating must be between 1 and 5");
     };
 
-    // Verify customer has completed order from this store
     let hasCompletedOrder = orders.find(
       func(o) {
         o.customer == caller and o.storeId == storeId and o.status == #completed
@@ -635,13 +633,11 @@ actor {
   };
 
   public query ({ caller }) func getStoreReviews(storeId : StoreId) : async [Review] {
-    // Anyone can view reviews
     reviews.filter<Review>(func(r) { r.storeId == storeId }).toArray();
   };
 
   // Marketplace Operations
   public query ({ caller }) func getMarketplaceProducts() : async [Product] {
-    // Anyone can view marketplace products
     products.values().toArray().filter(
       func(p) {
         p.marketplace and not p.outOfStock and
@@ -785,4 +781,3 @@ actor {
     };
   };
 };
-

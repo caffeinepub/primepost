@@ -67,6 +67,7 @@ export interface Review {
 }
 export enum TermsType {
     storeOwnerTerms = "storeOwnerTerms",
+    privacyPolicy = "privacyPolicy",
     customerTerms = "customerTerms"
 }
 export enum UserRole {

@@ -55,6 +55,7 @@ export interface Store {
 }
 export type StoreId = string;
 export type TermsType = { 'storeOwnerTerms' : null } |
+  { 'privacyPolicy' : null } |
   { 'customerTerms' : null };
 export interface UserProfile {
   'acceptedStoreOwnerTerms' : boolean,

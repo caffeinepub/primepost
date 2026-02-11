@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -10,17 +10,27 @@ import { Fingerprint, Lock } from 'lucide-react';
 export default function UnlockDialog() {
   const [pin, setPin] = useState('');
   const [showPinInput, setShowPinInput] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { verifyPin, unlock } = useLocalPin();
-  const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics } = useBiometricAuth();
+  const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics, isProcessing } = useBiometricAuth();
 
   const handleBiometricUnlock = async () => {
+    if (isAuthenticating || isProcessing) return;
+    
+    setIsAuthenticating(true);
     try {
       await verifyBiometrics();
       unlock();
       toast.success('Unlocked successfully!');
     } catch (error: any) {
-      toast.error('Biometric authentication failed');
+      if (error.message.includes('cancelled')) {
+        toast.info('Authentication cancelled');
+      } else {
+        toast.error('Biometric authentication failed');
+      }
       setShowPinInput(true);
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -39,12 +49,17 @@ export default function UnlockDialog() {
     }
   };
 
-  React.useEffect(() => {
-    if (canUseBiometrics() && isBiometricsEnabled() && !showPinInput) {
-      handleBiometricUnlock();
-    } else {
-      setShowPinInput(true);
-    }
+  useEffect(() => {
+    const tryBiometric = async () => {
+      const canUse = await canUseBiometrics();
+      if (canUse && isBiometricsEnabled() && !showPinInput) {
+        handleBiometricUnlock();
+      } else {
+        setShowPinInput(true);
+      }
+    };
+
+    tryBiometric();
   }, []);
 
   return (
@@ -53,7 +68,7 @@ export default function UnlockDialog() {
         <DialogHeader>
           <DialogTitle>Unlock PrimePost</DialogTitle>
           <DialogDescription>
-            {showPinInput ? 'Enter your PIN to continue' : 'Authenticating...'}
+            {isAuthenticating ? 'Authenticating...' : showPinInput ? 'Enter your PIN to continue' : 'Preparing authentication...'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
@@ -76,13 +91,22 @@ export default function UnlockDialog() {
                 </InputOTP>
               </div>
               <div className="space-y-2">
-                <Button onClick={handlePinUnlock} className="w-full" disabled={pin.length !== 4}>
+                <Button 
+                  onClick={handlePinUnlock} 
+                  className="w-full" 
+                  disabled={pin.length !== 4}
+                >
                   Unlock
                 </Button>
-                {canUseBiometrics() && isBiometricsEnabled() && (
-                  <Button onClick={handleBiometricUnlock} variant="outline" className="w-full">
+                {isBiometricsEnabled() && (
+                  <Button 
+                    onClick={handleBiometricUnlock} 
+                    variant="outline" 
+                    className="w-full"
+                    disabled={isAuthenticating || isProcessing}
+                  >
                     <Fingerprint className="w-4 h-4 mr-2" />
-                    Use Biometric Authentication
+                    {isAuthenticating ? 'Authenticating...' : 'Use Biometric Authentication'}
                   </Button>
                 )}
               </div>
