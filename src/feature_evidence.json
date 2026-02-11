@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-first-time-profile-onboarding-profilesetupdialog-so-that-selecting-the-admin-super-admin-role-does-not-require-accepting-terms-conditions-and-does-not-show-a-terms-acceptance-checkbox-for-admin",
-      "featureTitle": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
+      "featureId": "feature-ensure-the-public-url-path-assets-primepost-apk-in-production-serves-the-real-android-apk-binary-a-valid-zip-apk-starting-with-the-pk-header-not-an-html-text-response-and-that-the-downloaded-file-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
+      "featureTitle": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
       "files": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx"
+        "frontend/src/pages/public/ApkDownloadPage.tsx",
+        "frontend/src/utils/apkIntegrity.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,89 +18,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-41"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-super-admin-users-are-never-routed-to-termsacceptancepage-and-are-never-blocked-by-terms-availability-acceptance-checks-anywhere-in-the-admin-login-navigation-flow",
-      "featureTitle": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/auth/RoleLoginPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-42"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-customer-and-store-owner-terms-screens-never-block-users-with-a-terms-and-conditions-are-not-yet-available-state-when-backend-terms-content-is-missing-render-the-provided-fallback-legal-text-and-allow-acceptance-to-proceed",
-      "featureTitle": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
-      "files": [
-        "frontend/src/pages/terms/TermsAcceptancePage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-43"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-or-verify-and-wire-up-a-public-no-login-required-apk-download-page-route-in-the-react-app-and-link-to-it-from-the-landing-experience-so-users-can-download-the-apk-without-developer-instructions",
-      "featureTitle": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/public/ApkDownloadPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-44"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-landing-screen-copy-so-the-three-login-options-are-explicitly-customer-store-admin-matching-the-user-s-requested-wording-while-keeping-role-routing-behavior-unchanged-customer-login-customer-store-login-owner-admin-login-admin",
-      "featureTitle": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
-      "files": [
-        "frontend/src/App.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-45"
+        "REQ-57"
       ],
       "confidence": "high"
     }

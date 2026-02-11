@@ -1,105 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Bypass Terms for Admin, ensure Terms availability, and expose public APK download with 3-role login landing",
+  "title": "Fix production APK download serving HTML instead of a valid APK",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-41",
-      "text": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
-      "target": "frontend",
+      "id": "REQ-57",
+      "text": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "Armin don't need terms and conditions."
+          "The apk is not working. It's showing the same error. Please send it as APK not HTML"
         ]
       },
       "acceptanceCriteria": [
-        "When the user selects the Admin role during profile setup, the UI does not show a Terms & Conditions acceptance checkbox and does not block profile creation due to Terms not being accepted.",
-        "When the user selects Customer or Store Owner roles during profile setup, the Terms & Conditions acceptance checkbox is still required before continuing.",
-        "All user-facing text for validation/errors remains in English."
+        "From a deployed environment, downloading `GET /assets/primepost.apk` returns a binary file whose first 2 bytes are `PK` (0x50 0x4B).",
+        "`GET /assets/primepost.apk` returns a multi-megabyte file (>= 1 MB) and is not an HTML page or error document.",
+        "Installing the downloaded APK on an Android device completes successfully and the app launches.",
+        "The response headers for `/assets/primepost.apk` use a binary content type (acceptable: `application/vnd.android.package-archive` or `application/octet-stream`) and do not indicate HTML (`text/html`)."
       ]
     },
     {
-      "id": "REQ-42",
-      "text": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
+      "id": "REQ-58",
+      "text": "Update the production build/deploy workflow so that every deployment explicitly stages and includes `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` generated from the latest Android build output, preventing missing/stale assets that cause `/assets/primepost.apk` to fall back to an HTML response.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "To login as admin, where the terms and conditions is saying that it's not available."
+          "Please send it as APK not HTML"
         ]
       },
       "acceptanceCriteria": [
-        "Logging in via the Admin login option always navigates to the Admin dashboard for authenticated users with role Super Admin, without redirecting to any /terms/* routes.",
-        "If a Super Admin user has no acceptedCustomerTerms/acceptedStoreOwnerTerms flags (false), the Admin area is still accessible and unaffected."
+        "A clean production build (no prior artifacts) produces `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` before the frontend is built/deployed.",
+        "The deployed `/assets/primepost.apk.meta.json` reports a `size` that matches the deployed `/assets/primepost.apk` file size and a non-empty `sha256`.",
+        "If staging detects a missing/too-small/invalid APK, the build fails fast (no deployment is produced)."
       ]
     },
     {
-      "id": "REQ-43",
-      "text": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
+      "id": "REQ-59",
+      "text": "Add an automated post-deploy verification step (using the existing optional `DEPLOY_URL` remote verification behavior in the APK build scripts) that checks the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` for size/SHA-256 match and validates the deployed APK header is `PK`; fail the pipeline if the deployed asset is HTML, truncated, or mismatched.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "terms and conditions is saying that it's not available"
+          "It's showing the same error. Please send it as APK not HTML"
         ]
       },
       "acceptanceCriteria": [
-        "On /terms/customer and /terms/owner, if the backend returns null/empty for terms content, the page displays fallback terms text and the 'Accept and Continue' action can be completed.",
-        "The TermsAcceptancePage does not show a blocking message stating that terms are unavailable in the fallback case."
-      ]
-    },
-    {
-      "id": "REQ-44",
-      "text": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "Please also make the APK downloadable"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A public route exists that does not require authentication and includes: (1) a direct download link to the APK file and (2) short install instructions in English.",
-        "The app landing (home) experience includes an obvious link/button to open the APK download page.",
-        "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds)."
-      ]
-    },
-    {
-      "id": "REQ-45",
-      "text": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "one app has 3 login options. Option 1 is to login as customer, option is to login as store , and option 3 is to login as admin"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The home screen shows exactly three primary login actions labeled in English: 'Customer', 'Store', and 'Admin'.",
-        "Tapping each option routes to the correct existing role login page and then into the correct dashboard based on the user profile role."
+        "When `DEPLOY_URL` is provided, the build/publish process verifies remote `/assets/primepost.apk` size and SHA-256 match the locally built artifact.",
+        "When `DEPLOY_URL` is provided, the build/publish process verifies the remote `/assets/primepost.apk` begins with the `PK` header and fails if it does not.",
+        "The pipeline reports clear English error output indicating whether the deployed file is missing, too small, mismatched, or not a valid APK binary."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Backend must remain a single Motoko actor in backend/main.mo; add migration.mo only if a state upgrade is required.",
-    "Use English for all user-facing text."
+    "Frontend immutablePaths must not be edited (including `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, and `frontend/src/main.tsx`).",
+    "Backend must remain a single Motoko actor (`backend/main.mo`); add `backend/migration.mo` only if an actual state upgrade is required."
   ],
   "nonGoals": [
-    "Implementing new authentication providers beyond Internet Identity.",
-    "Changing role definitions or adding additional roles beyond Customer, Store Owner/Worker, and Super Admin.",
-    "Producing a signed release APK (this request is limited to making an APK downloadable via the web app with a stable filename)."
+    "Creating a release-signed (non-debug) APK or changing Android signing/keystore strategy.",
+    "Adding new app features unrelated to APK artifact correctness and delivery.",
+    "Replacing the existing APK download page UX (only correctness and verification of the served APK are in scope)."
   ],
   "imageRequirements": {
     "required": [],

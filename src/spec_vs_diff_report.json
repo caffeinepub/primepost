@@ -1,65 +1,65 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T11:23:59.988Z",
-  "summary": "REQ-41, REQ-43, REQ-44 (route/page/link), and REQ-45 appear implemented in the shown diffs. REQ-42 appears implemented via admin bypass routing/guards per RoleLoginPage and App.tsx summaries. The main potentially missing piece is ensuring the actual APK asset exists under frontend public/static assets; the diff only adds a page that links to it.",
+  "generatedAt": "2026-02-11T13:26:31.270Z",
+  "summary": "Diff mainly adds a frontend APK integrity checker (fetch metadata, HEAD + Range checks for PK header, and UI warnings) and includes unrelated large backend/main.mo changes. It does not show any build/deploy workflow changes to stage the APK + meta, nor any CI/post-deploy verification step using DEPLOY_URL, nor any backend/static-hosting configuration to ensure /assets/primepost.apk is served as a real binary with correct headers in production.",
   "missing_requirements": [
     {
-      "id": "REQ-44",
-      "requirement": "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds).",
-      "reason": "The new APK download page links to a stable path (/assets/primepost.apk), but the diff does not show the APK file being added under frontend public/static assets (or any static asset manifest change). With only the diff summary, we cannot confirm the asset exists and is served.",
+      "id": "REQ-57",
+      "requirement": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (valid ZIP/APK starting with `PK`), not an HTML/text response, with correct binary content-type headers.",
+      "reason": "The diff adds client-side validation/UI warnings when the deployed file is wrong, but does not show changes that would actually make production serve the correct binary at `/assets/primepost.apk` (e.g., ensuring the artifact is deployed, ensuring correct content-type, preventing HTML fallback). No relevant hosting/asset-serving config or deployment artifact inclusion is shown in the diff summary.",
       "evidence": [
-        "frontend/src/pages/public/ApkDownloadPage.tsx (href=\"/assets/primepost.apk\")"
+        "frontend/src/utils/apkIntegrity.ts",
+        "frontend/src/pages/public/ApkDownloadPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-58",
+      "requirement": "Update production build/deploy workflow to explicitly stage/include `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` from latest Android build; fail fast if missing/too-small/invalid.",
+      "reason": "No build/deploy scripts, pipeline config, or asset-staging logic are shown as added/modified. The changes shown are runtime frontend checks only (fetching deployed assets), not workflow steps that generate/copy/stage the APK and meta before building/deploying.",
+      "evidence": [
+        "frontend/src/utils/apkIntegrity.ts",
+        "frontend/src/pages/public/ApkDownloadPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-59",
+      "requirement": "Add automated post-deploy verification step (using optional `DEPLOY_URL` behavior in APK build scripts) verifying remote `/assets/primepost.apk` and meta (size/SHA match + PK header) and failing pipeline with clear errors.",
+      "reason": "The diff shows browser-side verification functions that always use relative URLs (`/assets/...`) and do not reference `DEPLOY_URL` or any CI/pipeline step that would run post-deploy and fail the build. No scripts/config changes are shown to implement post-deploy remote verification and pipeline failure output.",
+      "evidence": [
+        "frontend/src/utils/apkIntegrity.ts"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Shopping cart logic and UI changes (including route parameter handling for checkout/store navigation).",
-      "reason": "Not requested by any of REQ-41..REQ-45; these requirements are about terms/admin bypass, fallback legal text, APK download page, and landing/login copy.",
+      "description": "Frontend UI changes that appear to expand/alter the APK download page UX (integrity status, critical error messaging, additional icons/alerts) rather than limiting scope to artifact correctness and delivery.",
+      "reason": "Non-goals explicitly state not to replace the existing APK download page UX; the diff shows substantial new UI logic and messaging for validation states.",
       "evidence": [
-        "frontend/src/pages/customer/CartPage.tsx",
-        "frontend-file-summaries.txt (CartPage summary mentions checkout navigation route parameter fix)"
+        "frontend/src/pages/public/ApkDownloadPage.tsx"
       ]
     },
     {
-      "description": "Added/expanded money, analytics utilities, and cart Zustand persistence changes.",
-      "reason": "Not requested by REQ-41..REQ-45.",
+      "description": "Large unrelated backend actor changes (user roles, stores/products/orders/reviews/terms structures) not tied to APK asset serving.",
+      "reason": "BuildRequest is specifically about APK artifact correctness and delivery. The backend/main.mo diff snippet shows broad application logic unrelated to serving `/assets/primepost.apk`.",
       "evidence": [
-        "frontend/src/utils/money.ts",
-        "frontend/src/utils/analytics.ts",
-        "frontend/src/state/cartStore.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Unrelated frontend changes like routing/login/admin terms bypass and theme components mentioned in `frontend-file-summaries.txt`.",
+      "reason": "These items are not requested by REQ-57/58/59 and are outside the stated scope (APK artifact correctness and delivery).",
+      "evidence": [
         "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Theme system changes (ThemeProvider/ThemeToggle) and layout updates unrelated to the requested APK/terms/admin behavior (e.g., footer Privacy Policy navigation).",
-      "reason": "Not requested by REQ-41..REQ-45.",
-      "evidence": [
-        "frontend/src/components/theme/ThemeProvider.tsx",
-        "frontend/src/components/theme/ThemeToggle.tsx",
-        "frontend/src/components/layout/AppLayout.tsx",
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "New/updated React Query hook capability for bulk publishing provided legal docs (usePublishProvidedLegalDocs).",
-      "reason": "REQ-43 only asks for frontend fallback rendering when backend terms content is missing; it does not request new bulk publish mutations/hooks.",
-      "evidence": [
-        "frontend-file-summaries.txt (useQueries.ts summary mentions usePublishProvidedLegalDocs mutation)"
       ]
     }
   ],
   "confidence": 0.72,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/pages/auth/RoleLoginPage.tsx",
-    "frontend/src/pages/customer/CartPage.tsx",
     "frontend/src/pages/public/ApkDownloadPage.tsx",
-    "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+    "frontend/src/utils/apkIntegrity.ts",
     "project_state.json"
   ]
 }

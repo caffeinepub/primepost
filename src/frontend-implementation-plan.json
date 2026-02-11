@@ -1,102 +1,94 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "PrimePost: Admin bypass for Terms, robust Terms fallback, and public APK download route with 3-role landing copy",
+  "title": "Ensure production APK asset is correctly staged, served as binary, and verified post-deploy",
   "requirements": [
     {
-      "id": "REQ-41",
-      "summary": "Bypass Terms & Conditions requirement in ProfileSetupDialog when selecting Super Admin, while keeping Terms required for Customer and Store Owner.",
+      "id": "REQ-57",
+      "summary": "Prevent `/assets/primepost.apk` from being served as HTML by validating and surfacing deployed APK binary/header/content-type correctness on the download UI.",
       "acceptanceCriteria": [
-        "When the user selects the Admin role during profile setup, the UI does not show a Terms & Conditions acceptance checkbox and does not block profile creation due to Terms not being accepted.",
-        "When the user selects Customer or Store Owner roles during profile setup, the Terms & Conditions acceptance checkbox is still required before continuing.",
-        "All user-facing text for validation/errors remains in English."
+        "From a deployed environment, downloading `GET /assets/primepost.apk` returns a binary file whose first 2 bytes are `PK` (0x50 0x4B).",
+        "`GET /assets/primepost.apk` returns a multi-megabyte file (>= 1 MB) and is not an HTML page or error document.",
+        "Installing the downloaded APK on an Android device completes successfully and the app launches.",
+        "The response headers for `/assets/primepost.apk` use a binary content type (acceptable: `application/vnd.android.package-archive` or `application/octet-stream`) and do not indicate HTML (`text/html`)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/utils/apkIntegrity.ts",
           "operation": "modify",
-          "description": "Conditionally hide the Terms checkbox and skip the \"accept terms\" validation when selectedRole is UserRole.superAdmin; ensure Customer and Store Owner still require acceptance before submit; keep all validation/toast messages in English. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-42",
-      "summary": "Ensure Super Admin login flow never routes to Terms pages and is not blocked by any Terms acceptance/availability checks.",
-      "acceptanceCriteria": [
-        "Logging in via the Admin login option always navigates to the Admin dashboard for authenticated users with role Super Admin, without redirecting to any /terms/* routes.",
-        "If a Super Admin user has no acceptedCustomerTerms/acceptedStoreOwnerTerms flags (false), the Admin area is still accessible and unaffected."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/auth/RoleLoginPage.tsx",
-          "operation": "modify",
-          "description": "Harden post-login redirect logic so an authenticated Super Admin using the Admin login option is routed directly to /admin and never to /terms/*; ensure behavior for customer/store owner remains unchanged. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Verify and adjust any route-guard logic so only Customer and Store Owner routes perform Terms checks (useHasAcceptedTerms) and Super Admin navigation never triggers /terms/* redirects; keep admin area accessible regardless of acceptedCustomerTerms/acceptedStoreOwnerTerms values. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-43",
-      "summary": "On customer and store owner Terms pages, render fallback legal text when backend terms content is missing and allow acceptance to proceed without blocking.",
-      "acceptanceCriteria": [
-        "On /terms/customer and /terms/owner, if the backend returns null/empty for terms content, the page displays fallback terms text and the 'Accept and Continue' action can be completed.",
-        "The TermsAcceptancePage does not show a blocking message stating that terms are unavailable in the fallback case."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/terms/TermsAcceptancePage.tsx",
-          "operation": "modify",
-          "description": "Treat null/empty backend terms as \"missing\" and always display fallback CUSTOMER_TERMS/STORE_OWNER_TERMS; remove any blocking \"terms unavailable\" handling in fallback cases and ensure the accept action is enabled when the checkbox is checked (independent of backend content presence). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/legal/providedLegalText.ts",
-          "operation": "modify",
-          "description": "Confirm the exported fallback terms strings used by TermsAcceptancePage are non-empty and appropriate for display; adjust as needed while keeping all user-facing text in English. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-44",
-      "summary": "Add a public, no-login-required APK download route, served from stable static assets, and link it from the landing experience.",
-      "acceptanceCriteria": [
-        "A public route exists that does not require authentication and includes: (1) a direct download link to the APK file and (2) short install instructions in English.",
-        "The app landing (home) experience includes an obvious link/button to open the APK download page.",
-        "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/public/assets/primepost.apk",
-          "operation": "create",
-          "description": "Add the APK file to static public assets using a stable filename (primepost.apk) so the download link remains consistent across builds."
+          "description": "Extend APK integrity utilities to (a) fetch and validate `/assets/primepost.apk` using a byte-range request to confirm the `PK` header, (b) read response headers to detect HTML/text content types, and (c) optionally cross-check the downloaded size/SHA-256 against `/assets/primepost.apk.meta.json`, returning structured status/error details for the UI."
         },
         {
           "path": "frontend/src/pages/public/ApkDownloadPage.tsx",
-          "operation": "create",
-          "description": "Create a public React page that provides a direct download link to the stable APK at frontend/public/assets/primepost.apk and includes short, clear installation instructions in English (no auth required). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Register and wire a new public route (no auth guard) to render ApkDownloadPage, and add navigation from the existing landing experience to this route. Verify the component's usage instructions before implementing."
+          "description": "Update the APK download page to call the enhanced integrity checks (PK header + content-type + size/SHA match) and clearly warn/block download when the deployed asset appears to be HTML, too small, or otherwise invalid, without changing the overall page UX beyond correctness messaging."
         }
       ]
     },
     {
-      "id": "REQ-45",
-      "summary": "Update landing screen to show exactly three login options labeled Customer, Store, Admin while keeping existing role routing unchanged.",
+      "id": "REQ-58",
+      "summary": "Fail-fast staging that always generates and includes `public/assets/primepost.apk` and `public/assets/primepost.apk.meta.json` from the latest Android build output before deployment.",
       "acceptanceCriteria": [
-        "The home screen shows exactly three primary login actions labeled in English: 'Customer', 'Store', and 'Admin'.",
-        "Tapping each option routes to the correct existing role login page and then into the correct dashboard based on the user profile role."
+        "A clean production build (no prior artifacts) produces `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` before the frontend is built/deployed.",
+        "The deployed `/assets/primepost.apk.meta.json` reports a `size` that matches the deployed `/assets/primepost.apk` file size and a non-empty `sha256`.",
+        "If staging detects a missing/too-small/invalid APK, the build fails fast (no deployment is produced)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/scripts/stage-android-apk-assets.sh",
           "operation": "modify",
-          "description": "Update IndexComponent landing UI copy so the three primary login actions are labeled exactly 'Customer', 'Store', and 'Admin' while preserving existing navigation targets (/login/customer, /login/owner, /login/admin); also add an obvious link/button to the APK download page route introduced in REQ-44. Verify the component's usage instructions before implementing."
+          "description": "Tighten staging validation to always ensure both `public/assets/primepost.apk` and `public/assets/primepost.apk.meta.json` exist, enforce >=1MB size, verify `PK` header, and require metadata `size` to match the APK size with a non-empty `sha256`; ensure any invalid/missing/stale condition exits non-zero with clear English error output."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.ps1",
+          "operation": "modify",
+          "description": "Align Windows staging behavior with the shell version: enforce >=1MB, verify `PK` header, require metadata `size` match and non-empty `sha256`, and fail fast with clear English errors if assets are missing/invalid/stale."
+        },
+        {
+          "path": "frontend/scripts/build-android-apk-debug.sh",
+          "operation": "modify",
+          "description": "Harden the publish step that copies the built APK into `public/assets/primepost.apk` and generates `public/assets/primepost.apk.meta.json` by ensuring the metadata is always written with a real SHA-256 (fail if hash tooling is unavailable) and by keeping size/header/byte-identical checks as deployment blockers (non-zero exit on any mismatch)."
+        },
+        {
+          "path": "frontend/scripts/build-android-apk-debug.ps1",
+          "operation": "modify",
+          "description": "Harden the Windows publish step to ensure metadata is always written with a non-empty SHA-256 and that size/header/integrity checks block deployment (non-zero exit on any mismatch)."
+        },
+        {
+          "path": "frontend/docs/android-apk-build.md",
+          "operation": "modify",
+          "description": "Update documentation to instruct production build/deploy workflows to run the staging script before building/deploying the frontend, explicitly calling out that missing/too-small/invalid APK assets must fail the build to avoid `/assets/primepost.apk` falling back to an HTML response."
+        }
+      ]
+    },
+    {
+      "id": "REQ-59",
+      "summary": "Add strict post-deploy remote verification (gated by `DEPLOY_URL`) to validate deployed APK header and metadata size/SHA match, failing the pipeline on mismatch/HTML/truncation.",
+      "acceptanceCriteria": [
+        "When `DEPLOY_URL` is provided, the build/publish process verifies remote `/assets/primepost.apk` size and SHA-256 match the locally built artifact.",
+        "When `DEPLOY_URL` is provided, the build/publish process verifies the remote `/assets/primepost.apk` begins with the `PK` header and fails if it does not.",
+        "The pipeline reports clear English error output indicating whether the deployed file is missing, too small, mismatched, or not a valid APK binary."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/scripts/build-android-apk-debug.sh",
+          "operation": "modify",
+          "description": "Make remote verification strict when `DEPLOY_URL` is set: require needed tools (curl + jq), require remote metadata fetch to succeed, validate remote `Content-Type` is not HTML, validate remote meta `size`/`sha256` match local, and validate remote first 2 bytes are `PK`; on any failure, exit non-zero with clear English errors (missing/too small/mismatched/not PK/HTML)."
+        },
+        {
+          "path": "frontend/scripts/build-android-apk-debug.ps1",
+          "operation": "modify",
+          "description": "Make remote verification strict when `DEPLOY_URL` is set: require successful remote metadata fetch, validate remote headers indicate binary (not HTML), validate remote size/SHA match local, and validate remote first 2 bytes are `PK`; on any failure, exit non-zero with clear English errors (missing/too small/mismatched/not PK/HTML)."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.sh",
+          "operation": "modify",
+          "description": "When `DEPLOY_URL` is provided, invoke or replicate the strict remote verification behavior after staging so that CI/CD can run a single staging step and still fail the pipeline if the deployed `/assets/primepost.apk` is HTML/truncated/mismatched."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.ps1",
+          "operation": "modify",
+          "description": "When `DEPLOY_URL` is provided, invoke or replicate the strict remote verification behavior after staging so that CI/CD can run a single staging step and still fail the pipeline if the deployed `/assets/primepost.apk` is HTML/truncated/mismatched."
         }
       ]
     }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 19,
+  "projectStateVersion": 27,
   "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, including first-time user onboarding, PIN/biometric-based login, and admin-managed legal documents (Terms & Conditions + Privacy Policy) presented in-app.",
   "architectural_notes": [
     "Project name: PrimePost.",
@@ -19,7 +19,11 @@
     "Regression/bug: login flow stops after entering password (does not continue) across all roles (Store Owner/Worker, Admin, Customer) and persists across different browsers; users cannot access any app area.",
     "Customer Terms & Conditions acceptance screen reports \"Terms and Conditions are not yet available\" even though Terms & Conditions text was provided and expected to be published/available.",
     "Production launch/deployment failed with a deployment error (needs investigation to restore production deployment pipeline).",
-    "Admin login flow is incorrectly blocked by Terms & Conditions availability/acceptance (shows \"Terms and Conditions is not available\" for Admin, but Admin should not need T&C)."
+    "Admin login flow is incorrectly blocked by Terms & Conditions availability/acceptance (shows \"Terms and Conditions is not available\" for Admin, but Admin should not need T&C).",
+    "Downloaded PrimePost Android APK does not open/launch on Android device (app fails to start after install).",
+    "Downloaded APK file size is suspiciously small (likely truncated/invalid), leading to Android install failure with “There was a problem parsing the package.”",
+    "Version 11 PrimePost APK still fails to install on Android with error: “There was a problem parsing the package.”",
+    "Public APK download is still serving an HTML response instead of a real APK binary (user reports same parse/install error; request: \"send it as APK not HTML\")."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -342,6 +346,102 @@
         "REQ-45"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-the-public-apk-download-so-the-file-served-at-assets-primepost-apk-is-a-valid-installable-android-apk-not-an-html-text-response-or-truncated-file-and-the-downloaded-file-installs-opens-without-android-s-there-was-a-problem-parsing-the-package-error",
+      "title": "Fix the public APK download so the file served at /assets/primepost.apk is a valid, installable Android APK (not an HTML/text response or truncated file), and the downloaded file installs/opens without Android's “There was a problem parsing the package.” error.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-android-apk-build-and-publish-workflow-so-the-generated-debug-apk-is-automatically-copied-packaged-into-the-react-app-s-static-public-assets-under-the-stable-filename-frontend-public-assets-primepost-apk-so-production-deployments-always-ship-the-correct-apk-referenced-by-apkdownloadpage-assets-primepost-apk",
+      "title": "Update the Android APK build-and-publish workflow so the generated debug APK is automatically copied/packaged into the React app’s static public assets under the stable filename frontend/public/assets/primepost.apk, so production deployments always ship the correct APK referenced by ApkDownloadPage (/assets/primepost.apk).",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-lightweight-integrity-hint-on-the-public-apk-download-page-frontend-src-pages-public-apkdownloadpage-tsx-that-displays-the-expected-apk-filename-and-a-sha-256-or-at-minimum-the-expected-file-size-in-mb-so-users-can-detect-a-broken-cached-download-before-installing-use-clear-english-user-facing-text",
+      "title": "Add a lightweight integrity hint on the public APK download page (frontend/src/pages/public/ApkDownloadPage.tsx) that displays the expected APK filename and a SHA-256 (or at minimum, the expected file size in MB) so users can detect a broken/cached download before installing; use clear English user-facing text.",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-the-android-apk-build-scripts-to-fail-fast-if-the-generated-apk-is-missing-or-suspiciously-small-and-print-the-final-apk-size-and-checksum-to-the-console-output-cover-both-scripts-frontend-scripts-build-android-apk-debug-sh-and-frontend-scripts-build-android-apk-debug-ps1",
+      "title": "Harden the Android APK build scripts to fail fast if the generated APK is missing or suspiciously small, and print the final APK size and checksum to the console output (cover both scripts: frontend/scripts/build-android-apk-debug.sh and frontend/scripts/build-android-apk-debug.ps1).",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-file-served-at-the-public-url-path-assets-primepost-apk-is-a-valid-android-apk-not-html-text-and-not-truncated-and-installs-successfully-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
+      "title": "Ensure the file served at the public URL path `/assets/primepost.apk` is a valid Android APK (not HTML/text and not truncated) and installs successfully on Android without the error message “There was a problem parsing the package.”",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-and-fix-the-android-apk-build-and-publish-pipeline-so-that-building-the-debug-apk-always-copies-the-newly-generated-frontend-android-app-build-outputs-apk-debug-app-debug-apk-into-frontend-public-assets-primepost-apk-stable-filename-and-deploys-it-as-a-binary-asset-without-corruption",
+      "title": "Verify and fix the Android APK build-and-publish pipeline so that building the debug APK always copies the newly generated `frontend/android/app/build/outputs/apk/debug/app-debug.apk` into `frontend/public/assets/primepost.apk` (stable filename) and deploys it as a binary asset without corruption.",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-harden-the-public-apk-download-experience-so-users-can-detect-a-broken-download-before-trying-to-install-it-by-clearly-showing-the-expected-filename-file-size-and-sha-256-from-assets-primepost-apk-meta-json-and-showing-a-clear-english-warning-state-if-metadata-is-missing-or-reports-an-unusually-small-file-size",
+      "title": "Harden the public APK download experience so users can detect a broken download before trying to install it by clearly showing the expected filename, file size, and SHA-256 from `/assets/primepost.apk.meta.json`, and showing a clear English warning state if metadata is missing or reports an unusually small file size.",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-production-public-apk-artifact-so-that-the-file-downloaded-from-assets-primepost-apk-is-a-real-android-apk-binary-not-an-html-text-fallback-response-and-not-truncated-e-g-405-bytes-so-it-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
+      "title": "Fix the production/public APK artifact so that the file downloaded from `/assets/primepost.apk` is a real Android APK (binary), not an HTML/text fallback response, and not truncated (e.g., ~405 bytes), so it installs on Android without the error message “There was a problem parsing the package.”",
+      "reqIds": [
+        "REQ-53"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-build-and-publish-workflow-so-that-every-production-deployment-explicitly-generates-frontend-public-assets-primepost-apk-and-frontend-public-assets-primepost-apk-meta-json-from-the-latest-android-build-output-and-includes-them-in-the-deployed-frontend-assets-no-stale-cached-missing-apk",
+      "title": "Update the build-and-publish workflow so that every production deployment explicitly generates `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` from the latest Android build output and includes them in the deployed frontend assets (no stale/cached/missing APK).",
+      "reqIds": [
+        "REQ-54"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-automated-verification-step-to-the-android-apk-publish-scripts-frontend-scripts-build-android-apk-debug-sh-and-frontend-scripts-build-android-apk-debug-ps1-that-1-prints-the-local-apk-size-sha-256-and-2-optionally-when-a-base-url-is-provided-via-an-environment-variable-fetches-the-deployed-assets-primepost-apk-and-assets-primepost-apk-meta-json-to-confirm-the-deployed-size-and-sha-256-match-what-was-built-fail-fast-on-mismatch-or-suspiciously-small-deployed-files",
+      "title": "Add an automated verification step to the Android APK publish scripts (`frontend/scripts/build-android-apk-debug.sh` and `frontend/scripts/build-android-apk-debug.ps1`) that (1) prints the local APK size + SHA-256, and (2) optionally (when a base URL is provided via an environment variable) fetches the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` to confirm the deployed size and SHA-256 match what was built; fail fast on mismatch or suspiciously small deployed files.",
+      "reqIds": [
+        "REQ-55"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-the-public-apk-download-ux-to-reduce-accidental-installation-of-broken-downloads-by-explicitly-showing-the-user-the-expected-file-size-and-sha-256-and-adding-english-guidance-that-if-the-downloaded-file-size-is-extremely-small-example-405-b-as-in-the-reported-issue-the-user-should-not-install-it-and-should-re-download-after-the-integrity-panel-shows-a-normal-multi-megabyte-size",
+      "title": "Improve the public APK download UX to reduce accidental installation of broken downloads by explicitly showing the user the expected file size and SHA-256 and adding English guidance that if the downloaded file size is extremely small (example: ~405 B as in the reported issue), the user should not install it and should re-download after the integrity panel shows a normal multi-megabyte size.",
+      "reqIds": [
+        "REQ-56"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-public-url-path-assets-primepost-apk-in-production-serves-the-real-android-apk-binary-a-valid-zip-apk-starting-with-the-pk-header-not-an-html-text-response-and-that-the-downloaded-file-installs-on-android-without-the-error-message-there-was-a-problem-parsing-the-package",
+      "title": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -515,6 +615,22 @@
       "id": "AR-35",
       "summary": "Provide a single app landing screen with 3 login options (Customer / Store Owner-Worker / Admin) and make the Android APK publicly downloadable",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-37",
+      "summary": "Update the production build/deploy workflow so that every deployment explicitly stages and includes `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` generated from the latest Android build output, preventing missing/stale assets that cause `/assets/primepost.apk` to fall back to an HTML response.",
+      "reqIds": [
+        "REQ-58"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-38",
+      "summary": "Add an automated post-deploy verification step (using the existing optional `DEPLOY_URL` remote verification behavior in the APK build scripts) that checks the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` for size/SHA-256 match and validates the deployed APK header is `PK`; fail the pipeline if the deployed asset is HTML, truncated, or mismatched.",
+      "reqIds": [
+        "REQ-59"
+      ],
       "status": "pending"
     }
   ],

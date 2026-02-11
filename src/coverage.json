@@ -1,92 +1,63 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T11:23:59.992Z",
+  "generatedAt": "2026-02-11T13:26:31.274Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 3,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-41",
-        "summary": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
+        "id": "REQ-57",
+        "summary": "Ensure the public URL path `/assets/primepost.apk` in production serves the real Android APK binary (a valid ZIP/APK starting with the `PK` header), not an HTML/text response, and that the downloaded file installs on Android without the error message “There was a problem parsing the package.”",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/utils/apkIntegrity.ts",
+          "frontend/src/pages/public/ApkDownloadPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/utils/apkIntegrity.ts",
+          "frontend/src/pages/public/ApkDownloadPage.tsx"
         ]
       },
       {
-        "id": "REQ-42",
-        "summary": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
-        "status": "implemented",
+        "id": "REQ-58",
+        "summary": "Update the production build/deploy workflow so that every deployment explicitly stages and includes `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` generated from the latest Android build output, preventing missing/stale assets that cause `/assets/primepost.apk` to fall back to an HTML response.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/pages/auth/RoleLoginPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.ps1",
+          "frontend/scripts/build-android-apk-debug.sh",
+          "frontend/scripts/build-android-apk-debug.ps1",
+          "frontend/docs/android-apk-build.md"
         ],
-        "matchedFiles": [
-          "frontend/src/pages/auth/RoleLoginPage.tsx",
-          "frontend/src/App.tsx"
-        ]
+        "matchedFiles": []
       },
       {
-        "id": "REQ-43",
-        "summary": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
-        "status": "implemented",
+        "id": "REQ-59",
+        "summary": "Add an automated post-deploy verification step (using the existing optional `DEPLOY_URL` remote verification behavior in the APK build scripts) that checks the deployed `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` for size/SHA-256 match and validates the deployed APK header is `PK`; fail the pipeline if the deployed asset is HTML, truncated, or mismatched.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/pages/terms/TermsAcceptancePage.tsx",
-          "frontend/src/legal/providedLegalText.ts"
+          "frontend/scripts/build-android-apk-debug.sh",
+          "frontend/scripts/build-android-apk-debug.ps1",
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.ps1"
         ],
-        "matchedFiles": [
-          "frontend/src/pages/terms/TermsAcceptancePage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-44",
-        "summary": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/public/assets/primepost.apk",
-          "frontend/src/pages/public/ApkDownloadPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/public/assets/primepost.apk",
-          "frontend/src/pages/public/ApkDownloadPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-45",
-        "summary": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/public/assets/primepost.apk",
-    "frontend/src/App.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/pages/auth/RoleLoginPage.tsx",
-    "frontend/src/pages/customer/CartPage.tsx",
     "frontend/src/pages/public/ApkDownloadPage.tsx",
-    "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+    "frontend/src/utils/apkIntegrity.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
