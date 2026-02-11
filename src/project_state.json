@@ -1,0 +1,280 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 5,
+  "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, adding first-time user onboarding, PIN/biometric-based login, and admin-managed Terms & Conditions acceptance flows.",
+  "architectural_notes": [
+    "Project name: PrimePost.",
+    "Clients: Flutter mobile apps (Customer + Store Owner/Worker) for iOS/Android; React web app for Admin dashboard.",
+    "Backend options discussed: Node.js + Express or Firebase; database Firestore or PostgreSQL.",
+    "System requirements: secure auth + RBAC, cloud database, GPS/location support, push notifications, scalable architecture.",
+    "Real-time updates required (Firebase realtime mechanisms or WebSockets).",
+    "Payments: Mobile Money integration (e.g., MTN, Orange).",
+    "Note: mentions 'floater technology' as a build constraint/requirement (unclear definition).",
+    "Auth direction change: users should sign up with name/phone/email and use a persistent 4-digit PIN, with optional biometric (fingerprint/Face ID) support for login and transaction confirmation (not Internet Identity-only).",
+    "Add admin-managed Terms & Conditions documents (separate for Customer and Store Owner apps) and require first-login acceptance for customers."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-implement-role-based-accounts-and-access-control-with-three-roles-customer-store-owner-worker-super-admin-each-having-a-separate-login-entry-and-dashboard-authentication-must-use-internet-identity-and-role-assignment-must-be-enforced-for-all-protected-pages-and-backend-methods",
+      "title": "Implement role-based accounts and access control with three roles (Customer, Store Owner/Worker, Super Admin), each having a separate login entry and dashboard; authentication must use Internet Identity and role assignment must be enforced for all protected pages and backend methods.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-customer-experience-pages-a-store-access-by-entering-a-store-id-b-store-search-by-store-name-and-category-c-store-details-catalog-showing-product-image-price-and-availability-d-basket-cart-with-quantity-increase-decrease-and-item-removal",
+      "title": "Build Customer experience pages: (a) Store access by entering a Store ID, (b) store search by store name and category, (c) store details/catalog showing product image, price, and availability, (d) basket/cart with quantity increase/decrease and item removal.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-customer-order-placement-flow-review-selected-items-enter-optional-table-number-add-special-note-choose-payment-method-cash-or-mobile-money-when-mobile-money-is-selected-display-the-store-s-registered-mobile-money-number-and-payment-instructions-before-confirming-the-order",
+      "title": "Implement customer order placement flow: review selected items, enter optional table number, add special note, choose payment method (Cash or Mobile Money); when Mobile Money is selected, display the store’s registered mobile money number and payment instructions before confirming the order.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-order-status-lifecycle-and-tracking-ui-for-customers-with-statuses-pending-in-progress-on-the-way-completed-customers-can-view-current-status-for-active-orders-and-a-full-order-history-list",
+      "title": "Implement order status lifecycle and tracking UI for customers with statuses: Pending, In Progress, On The Way, Completed; customers can view current status for active orders and a full order history list.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-store-owner-worker-store-registration-and-management-owners-can-create-a-store-receive-a-unique-store-id-set-category-location-text-and-mobile-money-number-owners-can-view-and-edit-their-store-details",
+      "title": "Build Store Owner/Worker store registration and management: owners can create a store, receive a unique Store ID, set category, location text, and mobile money number; owners can view and edit their store details.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-store-owner-worker-inventory-management-create-edit-delete-products-set-price-and-stock-quantity-upload-attach-a-product-image-reference-mark-out-of-stock-and-view-a-low-stock-alert-indicator-when-stock-is-below-a-configurable-threshold",
+      "title": "Build Store Owner/Worker inventory management: create/edit/delete products, set price and stock quantity, upload/attach a product image reference, mark out-of-stock, and view a low-stock alert indicator when stock is below a configurable threshold.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-store-owner-worker-order-management-owners-receive-an-in-app-notification-indicator-for-new-orders-can-view-order-list-by-status-view-order-details-tick-items-one-by-one-while-picking-and-update-order-status-through-accept-order-in-progress-completed-mapping-to-customer-visible-states-pending-in-progress-on-the-way-completed-per-the-product-rules",
+      "title": "Build Store Owner/Worker order management: owners receive an in-app notification/indicator for new orders, can view order list by status, view order details, tick items one-by-one while picking, and update order status through: Accept Order → In Progress → Completed (mapping to customer-visible states: Pending/ In Progress/ On The Way/ Completed per the product rules).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-marketplace-owners-can-publish-products-as-special-sale-items-by-enabling-a-marketplace-flag-and-setting-a-discount-customers-can-browse-a-marketplace-page-search-items-by-name-and-filter-by-category-and-lowest-price",
+      "title": "Implement Marketplace: owners can publish products as special sale items by enabling a marketplace flag and setting a discount; customers can browse a Marketplace page, search items by name, and filter by category and lowest price.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-super-admin-web-dashboard-view-all-registered-stores-and-customers-monitor-transactions-by-status-pending-completed-at-minimum-view-total-revenue-and-per-store-commission-summary-block-unblock-stores-suspend-unsuspend-customers-and-show-basic-analytics-daily-weekly-monthly-counts-and-totals",
+      "title": "Build Super Admin web dashboard: view all registered stores and customers, monitor transactions by status (Pending/Completed at minimum), view total revenue and per-store commission summary, block/unblock stores, suspend/unsuspend customers, and show basic analytics (daily/weekly/monthly counts and totals).",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-customer-reviews-ratings-customers-can-submit-a-1-5-star-rating-and-optional-text-for-a-store-after-an-order-is-completed-store-pages-show-average-rating-and-recent-reviews",
+      "title": "Add customer reviews & ratings: customers can submit a 1–5 star rating (and optional text) for a store after an order is completed; store pages show average rating and recent reviews.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-coherent-primepost-visual-theme-colors-typography-spacing-components-and-apply-it-consistently-across-customer-owner-worker-and-admin-dashboards-include-light-and-dark-mode-styling",
+      "title": "Create a coherent PrimePost visual theme (colors, typography, spacing, components) and apply it consistently across Customer, Owner/Worker, and Admin dashboards; include light and dark mode styling.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-user-profile-data-model-to-store-first-time-onboarding-fields-full-name-phone-number-email-date-of-birth-nationality-and-state-of-residence",
+      "title": "Extend the user profile data model to store first-time onboarding fields: full name, phone number, email, date of birth, nationality, and state of residence.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-terms-conditions-acceptance-tracking-so-that-on-first-login-customers-must-explicitly-accept-the-customer-terms-conditions-via-a-checkbox-before-gaining-access-to-customer-pages-store-owners-must-similarly-be-able-to-accept-store-owner-terms-conditions-before-using-owner-pages",
+      "title": "Add Terms & Conditions acceptance tracking so that, on first login, Customers must explicitly accept the Customer Terms & Conditions via a checkbox before gaining access to customer pages; Store Owners must similarly be able to accept Store Owner Terms & Conditions before using owner pages.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-admin-ui-section-to-view-and-edit-publish-terms-conditions-for-customers-and-store-owners-english-user-facing-text-and-save-changes-to-the-backend-using-the-super-admin-s-identity",
+      "title": "Add an Admin UI section to view and edit/publish Terms & Conditions for Customers and Store Owners (English user-facing text), and save changes to the backend using the super admin’s identity.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-4-digit-pin-setup-and-device-local-unlock-step-that-users-can-use-all-the-time-to-re-enter-the-app-and-to-confirm-transactions-keep-internet-identity-as-the-account-identity-with-pin-acting-as-an-additional-local-verification-layer",
+      "title": "Implement a 4-digit PIN setup and device-local “unlock” step that users can use ‘all the time’ to re-enter the app and to confirm transactions; keep Internet Identity as the account identity, with PIN acting as an additional local verification layer.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-optional-biometric-authentication-support-for-unlock-transaction-confirmation-when-the-browser-device-supports-it-e-g-via-webauthn-platform-authenticators-with-a-fallback-to-the-4-digit-pin-when-biometrics-are-unavailable-or-fail",
+      "title": "Add optional biometric authentication support for unlock/transaction confirmation when the browser/device supports it (e.g., via WebAuthn platform authenticators), with a fallback to the 4-digit PIN when biometrics are unavailable or fail.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Implement role-based authentication with separate login and dashboards for Customer, Store Owner/Worker, and Super Admin",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Customer app: store access via Store ID, plus search by name/category and nearby GPS location",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Customer app: in-store catalog browsing (images, prices, availability), basket/cart with quantity adjustments",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Customer app: order placement with table number, special notes, payment method (cash or mobile money) and mobile money instructions",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Real-time order status tracking and notifications (Pending/In Progress/On The Way/Completed) with live updates when owners pick/complete items",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Customer app: order history, reviews/ratings (1–5 stars), and push notifications",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Store owner app: store registration (unique Store ID), category, location, and mobile money number management",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Store owner app: inventory management (CRUD products, images, price, stock qty, out-of-stock), low-stock alerts",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Store owner app: order management with notifications, item-by-item picking checklist, and status changes (Accept/In Progress/Completed)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Marketplace feature: owners publish discounted/sale items; customer marketplace search and filters (nearest, lowest price, category)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Admin web dashboard: manage stores/customers, monitor transactions and revenue/commission, block/suspend, analytics (daily/weekly/monthly)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Additional features: QR code for Store ID, digital receipts, sales report export (PDF/Excel), dark mode, multi-language support",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Create core backend data models and CRUD APIs in the single Motoko actor for: Stores (unique Store ID, name, category, location text, mobile money number, owner principal, status active/blocked), Products (storeId, name, imageRef, price, stockQty, outOfStock flag, discount info, marketplace flag), Orders (storeId, customer principal, items, quantities, tableNumber optional, specialNote, paymentMethod cash/mobileMoney, status), Reviews (storeId, customer principal, rating 1–5, text optional, timestamps).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Bootstrap first Super Admin: provide a secure way to create/assign the initial superAdmin role (first-admin setup flow)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Replace/augment Internet Identity auth with user login via profile (name/phone/email) + persistent 4-digit PIN; support biometrics (fingerprint/Face ID) for login and transaction confirmation",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "First-time signup/onboarding: collect name, phone number, email, date of birth, nationality, and state of residence",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Customer first-login must accept Terms & Conditions via checkbox; block access until accepted",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Admin dashboard: manage/publish Terms & Conditions content separately for Customer app and Store Owner app (editable text/versioning)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Implement a secure “first super admin bootstrap” flow so the first Super Admin can be set without an existing admin, while preventing arbitrary users from self-assigning superAdmin after initialization.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Create admin-managed Terms & Conditions content storage in the backend with separate content entries for (1) Customer app terms and (2) Store Owner app terms, editable only by super admins.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "PrimePost",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

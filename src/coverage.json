@@ -1,0 +1,141 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-11T08:06:24.306Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 7,
+    "implemented": 5,
+    "items": [
+      {
+        "id": "REQ-13",
+        "summary": "Implement a secure “first super admin bootstrap” flow so the first Super Admin can be set without an existing admin, while preventing arbitrary users from self-assigning superAdmin after initialization.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-14",
+        "summary": "Extend the user profile data model to store first-time onboarding fields: full name, phone number, email, date of birth, nationality, and state of residence.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/utils/userProfile.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/utils/userProfile.ts"
+        ]
+      },
+      {
+        "id": "REQ-15",
+        "summary": "Add Terms & Conditions acceptance tracking so that, on first login, Customers must explicitly accept the Customer Terms & Conditions via a checkbox before gaining access to customer pages; Store Owners must similarly be able to accept Store Owner Terms & Conditions before using owner pages.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-16",
+        "summary": "Create admin-managed Terms & Conditions content storage in the backend with separate content entries for (1) Customer app terms and (2) Store Owner app terms, editable only by super admins.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-17",
+        "summary": "Add an Admin UI section to view and edit/publish Terms & Conditions for Customers and Store Owners (English user-facing text), and save changes to the backend using the super admin’s identity.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "frontend/src/pages/admin/AdminDashboard.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "frontend/src/pages/admin/AdminDashboard.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-18",
+        "summary": "Implement a 4-digit PIN setup and device-local “unlock” step that users can use ‘all the time’ to re-enter the app and to confirm transactions; keep Internet Identity as the account identity, with PIN acting as an additional local verification layer.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useLocalPin.ts",
+          "frontend/src/components/auth/PinSetupDialog.tsx",
+          "frontend/src/components/auth/UnlockDialog.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useLocalPin.ts",
+          "frontend/src/components/auth/PinSetupDialog.tsx",
+          "frontend/src/components/auth/UnlockDialog.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-19",
+        "summary": "Add optional biometric authentication support for unlock/transaction confirmation when the browser/device supports it (e.g., via WebAuthn platform authenticators), with a fallback to the 4-digit PIN when biometrics are unavailable or fail.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/webauthn.ts",
+          "frontend/src/hooks/useBiometricAuth.ts",
+          "frontend/src/components/auth/PinSetupDialog.tsx",
+          "frontend/src/components/auth/UnlockDialog.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/webauthn.ts",
+          "frontend/src/hooks/useBiometricAuth.ts",
+          "frontend/src/components/auth/PinSetupDialog.tsx",
+          "frontend/src/components/auth/UnlockDialog.tsx",
+          "frontend/src/pages/customer/CheckoutPage.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "build-request.json",
+    "build-template/README.md",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/admin/TermsManagementPanel.tsx",
+    "frontend/src/components/auth/PinSetupDialog.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/components/auth/UnlockDialog.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useBiometricAuth.ts",
+    "frontend/src/hooks/useLocalPin.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/admin/AdminDashboard.tsx",
+    "frontend/src/pages/auth/RoleLoginPage.tsx",
+    "frontend/src/pages/customer/CheckoutPage.tsx",
+    "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+    "frontend/src/utils/userProfile.ts",
+    "frontend/src/utils/webauthn.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "kind": "build_request",
+  "title": "Add first super admin bootstrap, expanded onboarding profile, PIN/biometric local unlock, and admin-managed Terms & Conditions",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-13",
+      "text": "Implement a secure “first super admin bootstrap” flow so the first Super Admin can be set without an existing admin, while preventing arbitrary users from self-assigning superAdmin after initialization.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Yes please set first super admin logins role"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes a dedicated bootstrap operation that can only succeed when no superAdmin exists yet (one-time initialization).",
+        "After a superAdmin exists, attempts to use the bootstrap operation fail with a clear error.",
+        "After initialization, creating/updating user profiles continues to prevent non-admin users from assigning themselves the superAdmin role (including via saveCallerUserProfile)."
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Extend the user profile data model to store first-time onboarding fields: full name, phone number, email, date of birth, nationality, and state of residence.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "To login for the first time, app should ask for their name, phone number and email, date of birth, nationality, state of residence."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend UserProfile persists the added fields and returns them via getCallerUserProfile/getUserProfile.",
+        "Frontend profile setup UI collects all required fields and validates they are non-empty (except where explicitly optional).",
+        "Existing flows that read profile.role and profile.name continue to work after the profile shape change."
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "text": "Add Terms & Conditions acceptance tracking so that, on first login, Customers must explicitly accept the Customer Terms & Conditions via a checkbox before gaining access to customer pages; Store Owners must similarly be able to accept Store Owner Terms & Conditions before using owner pages.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "First time logins customer will need to click a tick box for the first screen to accept application terms and conditions.",
+          "Give admin a place to put application terms and conditions for customers app, app terms and conditions for store owners."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend stores per-user acceptance state separately for Customer terms and Store Owner terms (including at least an accepted flag and a timestamp and/or terms version identifier).",
+        "When a Customer has not accepted Customer terms, the UI blocks navigation to /customer routes until acceptance is completed.",
+        "When a Store Owner has not accepted Store Owner terms, the UI blocks navigation to /owner routes until acceptance is completed.",
+        "If terms content is missing/unpublished, the acceptance screen shows a clear message and prevents acceptance until terms exist."
+      ]
+    },
+    {
+      "id": "REQ-16",
+      "text": "Create admin-managed Terms & Conditions content storage in the backend with separate content entries for (1) Customer app terms and (2) Store Owner app terms, editable only by super admins.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Give admin a place to put application terms and conditions for customers app, app terms and conditions for store owners."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend provides read APIs for retrieving the current Customer terms and Store Owner terms without requiring super admin (so end-users can view them).",
+        "Backend provides write/update APIs restricted to superAdmin to set/update the Customer terms and Store Owner terms.",
+        "Each terms entry supports at least: plain text content and a monotonically increasing version (or updatedAt) so acceptance can be tied to a specific published version."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Add an Admin UI section to view and edit/publish Terms & Conditions for Customers and Store Owners (English user-facing text), and save changes to the backend using the super admin’s identity.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Give admin a place to put application terms and conditions for customers app, app terms and conditions for store owners."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin dashboard includes a clearly labeled section (or tab) for Terms & Conditions management with separate editors for Customer terms and Store Owner terms.",
+        "Saving terms shows success/failure feedback and reflects the latest saved content on reload.",
+        "Non-admin users cannot access the admin terms editor UI (and backend enforcement remains the source of truth)."
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "text": "Implement a 4-digit PIN setup and device-local “unlock” step that users can use ‘all the time’ to re-enter the app and to confirm transactions; keep Internet Identity as the account identity, with PIN acting as an additional local verification layer.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "any user that download the app will also log in using their name and create their 4 digits pint that they will use all the time to login with or to complete their transactions."
+        ]
+      },
+      "acceptanceCriteria": [
+        "After successful Internet Identity authentication and profile creation, users are prompted to set a 4-digit PIN (with confirmation) and the app does not proceed until PIN is set.",
+        "On subsequent app opens (within the same browser/device), if the user is already authenticated with Internet Identity, the app requires PIN entry to unlock before showing protected areas.",
+        "At minimum, the Checkout “Place order / Confirm order” action requires a PIN re-check (prompt) before submission is allowed.",
+        "PIN is stored only on the client device (not persisted in the Motoko backend).",
+        "All PIN-related UI copy is in English."
+      ]
+    },
+    {
+      "id": "REQ-19",
+      "text": "Add optional biometric authentication support for unlock/transaction confirmation when the browser/device supports it (e.g., via WebAuthn platform authenticators), with a fallback to the 4-digit PIN when biometrics are unavailable or fail.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Or finger print or face id."
+        ]
+      },
+      "acceptanceCriteria": [
+        "If a compatible platform authenticator is available, the UI offers an option to enable biometric unlock/confirmation; otherwise it only shows the PIN option.",
+        "If biometric authentication fails or is canceled, the user can still proceed by entering the 4-digit PIN.",
+        "Biometric data/credentials are handled on-device via browser APIs and are not sent to or stored in the Motoko backend.",
+        "All biometric-related UI copy is in English."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not remove or replace Internet Identity authentication; any PIN/biometric capability must be implemented as an additional local verification layer.",
+    "Backend must remain a single Motoko actor with all business logic in backend/main.mo.",
+    "Do not edit files under frontend/src/components/ui, frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths). Compose new components/hooks instead.",
+    "Use English for any user-facing text."
+  ],
+  "nonGoals": [
+    "Implementing third-party authentication providers (only Internet Identity is allowed).",
+    "Implementing push notifications, real-time WebSocket updates, or external database/storage services for PIN/biometric data.",
+    "Guaranteeing biometric availability on all devices/browsers (must gracefully fall back to PIN)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

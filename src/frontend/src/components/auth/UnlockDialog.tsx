@@ -1,0 +1,95 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { useLocalPin } from '../../hooks/useLocalPin';
+import { useBiometricAuth } from '../../hooks/useBiometricAuth';
+import { toast } from 'sonner';
+import { Fingerprint, Lock } from 'lucide-react';
+
+export default function UnlockDialog() {
+  const [pin, setPin] = useState('');
+  const [showPinInput, setShowPinInput] = useState(false);
+  const { verifyPin, unlock } = useLocalPin();
+  const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics } = useBiometricAuth();
+
+  const handleBiometricUnlock = async () => {
+    try {
+      await verifyBiometrics();
+      unlock();
+      toast.success('Unlocked successfully!');
+    } catch (error: any) {
+      toast.error('Biometric authentication failed');
+      setShowPinInput(true);
+    }
+  };
+
+  const handlePinUnlock = () => {
+    if (pin.length !== 4) {
+      toast.error('PIN must be 4 digits');
+      return;
+    }
+
+    if (verifyPin(pin)) {
+      unlock();
+      toast.success('Unlocked successfully!');
+    } else {
+      toast.error('Incorrect PIN');
+      setPin('');
+    }
+  };
+
+  React.useEffect(() => {
+    if (canUseBiometrics() && isBiometricsEnabled() && !showPinInput) {
+      handleBiometricUnlock();
+    } else {
+      setShowPinInput(true);
+    }
+  }, []);
+
+  return (
+    <Dialog open={true}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Unlock PrimePost</DialogTitle>
+          <DialogDescription>
+            {showPinInput ? 'Enter your PIN to continue' : 'Authenticating...'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div className="flex justify-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-primary" />
+            </div>
+          </div>
+
+          {showPinInput && (
+            <>
+              <div className="flex justify-center">
+                <InputOTP maxLength={4} value={pin} onChange={setPin}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <div className="space-y-2">
+                <Button onClick={handlePinUnlock} className="w-full" disabled={pin.length !== 4}>
+                  Unlock
+                </Button>
+                {canUseBiometrics() && isBiometricsEnabled() && (
+                  <Button onClick={handleBiometricUnlock} variant="outline" className="w-full">
+                    <Fingerprint className="w-4 h-4 mr-2" />
+                    Use Biometric Authentication
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
