@@ -4,21 +4,37 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Runtime error: \"useLanguage must be used within a LanguageProvider\" (hook used outside provider context)."
+    "APK deployment/build failed with a deployment error (needs investigation to successfully produce/deploy APK)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-the-react-component-tree-is-wrapped-in-languageprovider-so-any-call-to-uselanguage-e-g-in-frontend-src-app-tsx-and-frontend-src-components-layout-applayout-tsx-is-always-within-provider-context-eliminating-the-runtime-error-uselanguage-must-be-used-within-a-languageprovider",
-      "title": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
+      "id": "feature-ensure-the-deployed-site-serves-a-real-android-apk-binary-at-the-exact-path-assets-primepost-apk-not-an-html-fallback-and-serves-the-metadata-json-at-assets-primepost-apk-meta-json-the-deployed-apk-must-be-at-least-1-mb-and-start-with-the-zip-apk-pk-header-bytes",
+      "title": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` (not an HTML fallback), and serves the metadata JSON at `/assets/primepost.apk.meta.json`. The deployed APK must be at least 1 MB and start with the ZIP/APK `PK` header bytes.",
       "reqIds": [
         "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-pre-deploy-staging-step-that-guarantees-frontend-public-assets-primepost-apk-and-frontend-public-assets-primepost-apk-meta-json-exist-and-are-valid-before-deployment-using-the-existing-script-frontend-scripts-stage-android-apk-assets-sh-or-the-platform-equivalent-command-runner-fail-the-build-deploy-if-the-staging-script-fails-validation",
+      "title": "Add a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, using the existing script `frontend/scripts/stage-android-apk-assets.sh` (or the platform-equivalent command runner). Fail the build/deploy if the staging script fails validation.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-configure-static-asset-serving-so-apk-files-are-not-rewritten-to-the-spa-entry-html-and-are-served-with-an-apk-appropriate-content-type-e-g-application-vnd-android-package-archive-at-assets-primepost-apk",
+      "title": "Configure static asset serving so `.apk` files are not rewritten to the SPA entry HTML and are served with an APK-appropriate Content-Type (e.g., `application/vnd.android.package-archive`) at `/assets/primepost.apk`.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Fix runtime error: useLanguage used outside LanguageProvider",
+  "projectName": "Fix APK deployment so /assets/primepost.apk serves a valid binary",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

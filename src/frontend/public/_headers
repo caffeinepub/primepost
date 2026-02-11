@@ -1,0 +1,10 @@
+# Force correct Content-Type for APK and metadata files
+# Prevents text/html responses for binary APK files
+
+/assets/primepost.apk
+  Content-Type: application/vnd.android.package-archive
+  Cache-Control: public, max-age=3600
+
+/assets/primepost.apk.meta.json
+  Content-Type: application/json
+  Cache-Control: public, max-age=3600

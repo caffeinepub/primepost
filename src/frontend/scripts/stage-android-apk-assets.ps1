@@ -1,111 +1,154 @@
-# PrimePost Android APK Asset Staging Script (Windows)
+# CI-friendly staging script for Android APK assets (PowerShell)
 # This script ensures the APK and metadata are ready for deployment
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🎬 Staging PrimePost Android APK for Deployment" -ForegroundColor Cyan
-Write-Host "================================================" -ForegroundColor Cyan
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
+$AndroidDir = Join-Path $ProjectRoot "frontend\android"
+$PublicAssetsDir = Join-Path $ProjectRoot "frontend\public\assets"
+$ApkSource = Join-Path $AndroidDir "app\build\outputs\apk\debug\app-debug.apk"
+$ApkDest = Join-Path $PublicAssetsDir "primepost.apk"
+$MetaDest = Join-Path $PublicAssetsDir "primepost.apk.meta.json"
 
-# Check if we're in the frontend directory
-if (-not (Test-Path "package.json")) {
-    Write-Host "❌ Error: Must run from frontend directory" -ForegroundColor Red
-    exit 1
-}
-
-# Step 1: Check if APK already exists and is valid
+Write-Host "=== Android APK Staging Script ===" -ForegroundColor Cyan
+Write-Host "Project root: $ProjectRoot"
+Write-Host "Android dir: $AndroidDir"
+Write-Host "Public assets dir: $PublicAssetsDir"
 Write-Host ""
-Write-Host "🔍 Step 1/3: Checking for existing APK..." -ForegroundColor Yellow
 
-$apkExists = $false
-if (Test-Path "public\assets\primepost.apk") {
-    $apkSize = (Get-Item "public\assets\primepost.apk").Length
-    $minSize = 1048576  # 1 MB
-    
-    if ($apkSize -ge $minSize) {
-        # Verify it's a real APK (starts with PK signature)
-        $firstBytes = Get-Content "public\assets\primepost.apk" -Encoding Byte -TotalCount 2
-        if ($firstBytes[0] -eq 0x50 -and $firstBytes[1] -eq 0x4B) {
-            Write-Host "✅ Valid APK found ($apkSize bytes)" -ForegroundColor Green
-            $apkExists = $true
-        } else {
-            Write-Host "⚠️  File exists but doesn't appear to be a valid APK (wrong signature)" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "⚠️  File exists but is too small ($apkSize bytes)" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "⚠️  No APK found at public\assets\primepost.apk" -ForegroundColor Yellow
-}
+# Ensure public/assets directory exists
+New-Item -ItemType Directory -Force -Path $PublicAssetsDir | Out-Null
 
-# Step 2: Build APK if needed
-if (-not $apkExists) {
-    Write-Host ""
-    Write-Host "🔨 Step 2/3: Building Android APK..." -ForegroundColor Yellow
+# Check if APK already exists and is valid
+if (Test-Path $ApkDest) {
+    Write-Host "✓ APK already exists at $ApkDest" -ForegroundColor Green
     
-    # Run the build script
-    if (Test-Path "scripts\build-android-apk-debug.ps1") {
-        & "scripts\build-android-apk-debug.ps1"
-    } else {
-        Write-Host "❌ Error: Build script not found at scripts\build-android-apk-debug.ps1" -ForegroundColor Red
+    # Validate existing APK
+    $ApkSize = (Get-Item $ApkDest).Length
+    
+    if ($ApkSize -lt 1048576) {
+        Write-Host "✗ ERROR: Existing APK is too small ($ApkSize bytes, expected >= 1 MB)" -ForegroundColor Red
         exit 1
     }
+    
+    # Check PK header
+    $Header = Get-Content $ApkDest -Encoding Byte -TotalCount 2
+    if ($Header[0] -ne 0x50 -or $Header[1] -ne 0x4B) {
+        Write-Host "✗ ERROR: Existing APK does not have valid PK header (got: 0x$($Header[0].ToString('X2')) 0x$($Header[1].ToString('X2')))" -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "✓ Existing APK is valid (size: $ApkSize bytes, PK header: OK)" -ForegroundColor Green
 } else {
-    Write-Host ""
-    Write-Host "⏭️  Step 2/3: Skipping build (valid APK already exists)" -ForegroundColor Cyan
+    Write-Host "⚠ APK not found at $ApkDest, checking source..." -ForegroundColor Yellow
+    
+    # Check if source APK exists
+    if (-not (Test-Path $ApkSource)) {
+        Write-Host "✗ ERROR: Source APK not found at $ApkSource" -ForegroundColor Red
+        Write-Host "Please build the Android APK first using:"
+        Write-Host "  cd frontend\android && .\gradlew.bat assembleDebug"
+        exit 1
+    }
+    
+    Write-Host "✓ Source APK found at $ApkSource" -ForegroundColor Green
+    
+    # Copy APK to public assets
+    Write-Host "Copying APK to public assets..."
+    Copy-Item $ApkSource $ApkDest -Force
+    
+    # Validate copied APK
+    $ApkSize = (Get-Item $ApkDest).Length
+    
+    if ($ApkSize -lt 1048576) {
+        Write-Host "✗ ERROR: Copied APK is too small ($ApkSize bytes, expected >= 1 MB)" -ForegroundColor Red
+        exit 1
+    }
+    
+    # Check PK header
+    $Header = Get-Content $ApkDest -Encoding Byte -TotalCount 2
+    if ($Header[0] -ne 0x50 -or $Header[1] -ne 0x4B) {
+        Write-Host "✗ ERROR: Copied APK does not have valid PK header (got: 0x$($Header[0].ToString('X2')) 0x$($Header[1].ToString('X2')))" -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "✓ APK copied successfully (size: $ApkSize bytes, PK header: OK)" -ForegroundColor Green
 }
 
-# Step 3: Verify final state
+# Generate or validate metadata
+if (Test-Path $MetaDest) {
+    Write-Host "✓ Metadata already exists at $MetaDest" -ForegroundColor Green
+    
+    # Validate metadata matches APK
+    $MetaContent = Get-Content $MetaDest -Raw | ConvertFrom-Json
+    $ActualSize = (Get-Item $ApkDest).Length
+    
+    if ($MetaContent.size -ne $ActualSize) {
+        Write-Host "⚠ WARNING: Metadata size ($($MetaContent.size)) does not match APK size ($ActualSize)" -ForegroundColor Yellow
+        Write-Host "Regenerating metadata..."
+        
+        # Generate SHA-256 checksum
+        $Sha256 = (Get-FileHash $ApkDest -Algorithm SHA256).Hash.ToLower()
+        
+        # Create metadata JSON
+        $Metadata = @{
+            filename = "primepost.apk"
+            size = $ActualSize
+            sha256 = $Sha256
+            buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        }
+        
+        $Metadata | ConvertTo-Json | Set-Content $MetaDest -Encoding UTF8
+        
+        Write-Host "✓ Metadata regenerated" -ForegroundColor Green
+    } else {
+        Write-Host "✓ Metadata is valid" -ForegroundColor Green
+    }
+} else {
+    Write-Host "Generating metadata..."
+    
+    $ApkSize = (Get-Item $ApkDest).Length
+    
+    # Generate SHA-256 checksum
+    $Sha256 = (Get-FileHash $ApkDest -Algorithm SHA256).Hash.ToLower()
+    
+    # Create metadata JSON
+    $Metadata = @{
+        filename = "primepost.apk"
+        size = $ApkSize
+        sha256 = $Sha256
+        buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    }
+    
+    $Metadata | ConvertTo-Json | Set-Content $MetaDest -Encoding UTF8
+    
+    Write-Host "✓ Metadata generated" -ForegroundColor Green
+}
+
 Write-Host ""
-Write-Host "🔍 Step 3/3: Final verification..." -ForegroundColor Yellow
-
-if (-not (Test-Path "public\assets\primepost.apk")) {
-    Write-Host "❌ Error: APK not found after staging" -ForegroundColor Red
-    exit 1
-}
-
-if (-not (Test-Path "public\assets\primepost.apk.meta.json")) {
-    Write-Host "❌ Error: Metadata not found after staging" -ForegroundColor Red
-    exit 1
-}
-
-$finalSize = (Get-Item "public\assets\primepost.apk").Length
-$minSize = 1048576
-
-if ($finalSize -lt $minSize) {
-    Write-Host "❌ Error: Final APK is too small ($finalSize bytes)" -ForegroundColor Red
-    exit 1
-}
-
-# Verify APK signature
-$firstBytes = Get-Content "public\assets\primepost.apk" -Encoding Byte -TotalCount 2
-if ($firstBytes[0] -ne 0x50 -or $firstBytes[1] -ne 0x4B) {
-    Write-Host "❌ Error: Final APK has invalid signature (not a ZIP/APK file)" -ForegroundColor Red
-    exit 1
-}
-
-# Read and verify metadata
-$metadata = Get-Content "public\assets\primepost.apk.meta.json" | ConvertFrom-Json
-$metaSize = $metadata.size
-$metaSha256 = $metadata.sha256
-
-if ($metaSize -ne $finalSize) {
-    Write-Host "❌ Error: Metadata size ($metaSize) doesn't match APK size ($finalSize)" -ForegroundColor Red
-    exit 1
-}
-
-if ([string]::IsNullOrEmpty($metaSha256)) {
-    Write-Host "❌ Error: Metadata has empty SHA-256" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "✅ Metadata verified: size=$metaSize, sha256=$metaSha256" -ForegroundColor Green
-
+Write-Host "=== Staging Complete ===" -ForegroundColor Cyan
+Write-Host "APK: $ApkDest"
+Write-Host "Metadata: $MetaDest"
 Write-Host ""
-Write-Host "✅ Staging complete!" -ForegroundColor Green
+Write-Host "Final validation:"
+$ApkSize = (Get-Item $ApkDest).Length
+$ApkSizeMB = [math]::Round($ApkSize / 1024 / 1024, 2)
+Write-Host "  APK size: $ApkSize bytes ($ApkSizeMB MB)"
+$Header = Get-Content $ApkDest -Encoding Byte -TotalCount 2
+Write-Host "  APK header: 0x$($Header[0].ToString('X2'))$($Header[1].ToString('X2')) (expected: 0x504B)"
+Write-Host "  Metadata: $(Get-Content $MetaDest -Raw)"
 Write-Host ""
-Write-Host "📱 Ready for deployment:" -ForegroundColor Cyan
-Write-Host "   APK: public\assets\primepost.apk ($finalSize bytes)" -ForegroundColor White
-Write-Host "   Metadata: public\assets\primepost.apk.meta.json" -ForegroundColor White
-Write-Host ""
-Write-Host "🚀 You can now deploy the frontend with the APK included" -ForegroundColor Cyan
-Write-Host "🎉 Done!" -ForegroundColor Green
+
+# Final validation
+if ($ApkSize -lt 1048576) {
+    Write-Host "✗ FATAL: APK is too small ($ApkSize bytes)" -ForegroundColor Red
+    exit 1
+}
+
+if ($Header[0] -ne 0x50 -or $Header[1] -ne 0x4B) {
+    Write-Host "✗ FATAL: APK does not have valid PK header" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "✓ All validations passed. APK is ready for deployment." -ForegroundColor Green
+exit 0

@@ -2,6 +2,9 @@
 *.apk binary
 *.aab binary
 
+# Treat JSON metadata as text with LF line endings
+*.meta.json text eol=lf
+
 # Treat common binary formats as binary
 *.png binary
 *.jpg binary

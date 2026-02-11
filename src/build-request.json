@@ -1,34 +1,70 @@
 {
   "kind": "build_request",
-  "title": "Fix runtime error: useLanguage used outside LanguageProvider",
+  "title": "Fix APK deployment so /assets/primepost.apk serves a valid binary",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
-      "target": "frontend",
+      "text": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` (not an HTML fallback), and serves the metadata JSON at `/assets/primepost.apk.meta.json`. The deployed APK must be at least 1 MB and start with the ZIP/APK `PK` header bytes.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "It's indicating this error \nuseLanguage must be used within a LanguageProvider"
+          "Deploy the apk please"
         ]
       },
       "acceptanceCriteria": [
-        "Loading any route (including `/`) no longer throws the error \"useLanguage must be used within a LanguageProvider\" in the browser console.",
-        "`useLanguage()` works in `IndexComponent` (home page) and `AppLayout` (header language selector + translated nav/footer) without crashing.",
-        "The app renders successfully without requiring changes to immutable provider bootstrap files (e.g., `frontend/src/main.tsx`)."
+        "Visiting `/assets/primepost.apk` returns a binary file download (not an HTML document).",
+        "A HEAD request to `/assets/primepost.apk` returns a non-HTML Content-Type and a Content-Length >= 1,048,576 bytes.",
+        "Fetching the first two bytes of `/assets/primepost.apk` yields `0x50 0x4B` (\"PK\").",
+        "`/assets/primepost.apk.meta.json` is accessible and contains a numeric `size` matching the deployed APK size."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, using the existing script `frontend/scripts/stage-android-apk-assets.sh` (or the platform-equivalent command runner). Fail the build/deploy if the staging script fails validation.",
+      "target": "unknown",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Deploy the apk please"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The deployment pipeline runs the staging script before deploying the frontend assets.",
+        "If the APK is missing, < 1 MB, or does not start with `PK`, the deployment stops with a clear error message.",
+        "After a successful deployment, the APK download page no longer reports `Content-Type: text/html` for the deployed APK."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Configure static asset serving so `.apk` files are not rewritten to the SPA entry HTML and are served with an APK-appropriate Content-Type (e.g., `application/vnd.android.package-archive`) at `/assets/primepost.apk`.",
+      "target": "unknown",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Deploy the apk please"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Requesting `/assets/primepost.apk` does not return the app HTML shell under any routing mode (direct navigation, refresh, or deep link).",
+        "Response headers for `/assets/primepost.apk` indicate an APK/binary Content-Type rather than `text/html` or `text/plain`."
       ]
     }
   ],
   "constraints": [
-    "Do not modify immutable frontend paths: `frontend/src/main.tsx`, `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, and anything under `frontend/src/components/ui`.",
-    "Keep all user-facing text in English in the build request."
+    "Backend must remain a single Motoko actor (no additional backend services).",
+    "Do not edit any files under `frontend/src/components/ui` or other immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Adding new languages or changing translation content/keys.",
-    "Changing authentication, routing behavior, or backend canister logic."
+    "Publishing a signed Play Store release (AAB) or handling Play Store submission.",
+    "Adding new application features unrelated to APK build/hosting."
   ],
   "imageRequirements": {
     "required": [],

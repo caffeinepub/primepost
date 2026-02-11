@@ -1,116 +1,166 @@
 #!/bin/bash
+set -e
 
-# PrimePost Android APK Asset Staging Script
+# CI-friendly staging script for Android APK assets
 # This script ensures the APK and metadata are ready for deployment
 
-set -e  # Exit on error
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+ANDROID_DIR="$PROJECT_ROOT/frontend/android"
+PUBLIC_ASSETS_DIR="$PROJECT_ROOT/frontend/public/assets"
+APK_SOURCE="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
+APK_DEST="$PUBLIC_ASSETS_DIR/primepost.apk"
+META_DEST="$PUBLIC_ASSETS_DIR/primepost.apk.meta.json"
 
-echo "🎬 Staging PrimePost Android APK for Deployment"
-echo "================================================"
+echo "=== Android APK Staging Script ==="
+echo "Project root: $PROJECT_ROOT"
+echo "Android dir: $ANDROID_DIR"
+echo "Public assets dir: $PUBLIC_ASSETS_DIR"
+echo ""
 
-# Check if we're in the frontend directory
-if [ ! -f "package.json" ]; then
-    echo "❌ Error: Must run from frontend directory"
+# Ensure public/assets directory exists
+mkdir -p "$PUBLIC_ASSETS_DIR"
+
+# Check if APK already exists and is valid
+if [ -f "$APK_DEST" ]; then
+  echo "✓ APK already exists at $APK_DEST"
+  
+  # Validate existing APK
+  APK_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
+  
+  if [ "$APK_SIZE" -lt 1048576 ]; then
+    echo "✗ ERROR: Existing APK is too small ($APK_SIZE bytes, expected >= 1 MB)"
     exit 1
+  fi
+  
+  # Check PK header
+  HEADER=$(xxd -l 2 -p "$APK_DEST" 2>/dev/null || od -An -tx1 -N2 "$APK_DEST" | tr -d ' \n' || echo "")
+  if [ "$HEADER" != "504b" ] && [ "$HEADER" != "50 4b" ]; then
+    echo "✗ ERROR: Existing APK does not have valid PK header (got: $HEADER)"
+    exit 1
+  fi
+  
+  echo "✓ Existing APK is valid (size: $APK_SIZE bytes, PK header: OK)"
+else
+  echo "⚠ APK not found at $APK_DEST, checking source..."
+  
+  # Check if source APK exists
+  if [ ! -f "$APK_SOURCE" ]; then
+    echo "✗ ERROR: Source APK not found at $APK_SOURCE"
+    echo "Please build the Android APK first using:"
+    echo "  cd frontend/android && ./gradlew assembleDebug"
+    exit 1
+  fi
+  
+  echo "✓ Source APK found at $APK_SOURCE"
+  
+  # Copy APK to public assets
+  echo "Copying APK to public assets..."
+  cp "$APK_SOURCE" "$APK_DEST"
+  
+  # Validate copied APK
+  APK_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
+  
+  if [ "$APK_SIZE" -lt 1048576 ]; then
+    echo "✗ ERROR: Copied APK is too small ($APK_SIZE bytes, expected >= 1 MB)"
+    exit 1
+  fi
+  
+  # Check PK header
+  HEADER=$(xxd -l 2 -p "$APK_DEST" 2>/dev/null || od -An -tx1 -N2 "$APK_DEST" | tr -d ' \n' || echo "")
+  if [ "$HEADER" != "504b" ] && [ "$HEADER" != "50 4b" ]; then
+    echo "✗ ERROR: Copied APK does not have valid PK header (got: $HEADER)"
+    exit 1
+  fi
+  
+  echo "✓ APK copied successfully (size: $APK_SIZE bytes, PK header: OK)"
 fi
 
-# Step 1: Check if APK already exists and is valid
-echo ""
-echo "🔍 Step 1/3: Checking for existing APK..."
-
-APK_EXISTS=false
-if [ -f "public/assets/primepost.apk" ]; then
-    APK_SIZE=$(stat -f%z "public/assets/primepost.apk" 2>/dev/null || stat -c%s "public/assets/primepost.apk" 2>/dev/null)
-    MIN_SIZE=1048576  # 1 MB
+# Generate or validate metadata
+if [ -f "$META_DEST" ]; then
+  echo "✓ Metadata already exists at $META_DEST"
+  
+  # Validate metadata matches APK
+  META_SIZE=$(grep -o '"size":[0-9]*' "$META_DEST" | cut -d: -f2 || echo "0")
+  ACTUAL_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
+  
+  if [ "$META_SIZE" != "$ACTUAL_SIZE" ]; then
+    echo "⚠ WARNING: Metadata size ($META_SIZE) does not match APK size ($ACTUAL_SIZE)"
+    echo "Regenerating metadata..."
     
-    if [ "$APK_SIZE" -ge "$MIN_SIZE" ]; then
-        # Verify it's a real APK (starts with PK signature)
-        FIRST_BYTES=$(xxd -l 2 -p "public/assets/primepost.apk" 2>/dev/null || od -An -tx1 -N2 "public/assets/primepost.apk" 2>/dev/null | tr -d ' \n')
-        if [ "$FIRST_BYTES" = "504b" ] || [ "$FIRST_BYTES" = "50 4b" ]; then
-            echo "✅ Valid APK found ($APK_SIZE bytes)"
-            APK_EXISTS=true
-        else
-            echo "⚠️  File exists but doesn't appear to be a valid APK (wrong signature)"
-        fi
+    # Generate SHA-256 checksum
+    if command -v sha256sum >/dev/null 2>&1; then
+      SHA256=$(sha256sum "$APK_DEST" | cut -d' ' -f1)
+    elif command -v shasum >/dev/null 2>&1; then
+      SHA256=$(shasum -a 256 "$APK_DEST" | cut -d' ' -f1)
     else
-        echo "⚠️  File exists but is too small ($APK_SIZE bytes)"
+      SHA256="unavailable"
     fi
+    
+    # Create metadata JSON
+    cat > "$META_DEST" <<EOF
+{
+  "filename": "primepost.apk",
+  "size": $ACTUAL_SIZE,
+  "sha256": "$SHA256",
+  "buildDate": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+    
+    echo "✓ Metadata regenerated"
+  else
+    echo "✓ Metadata is valid"
+  fi
 else
-    echo "⚠️  No APK found at public/assets/primepost.apk"
-fi
-
-# Step 2: Build APK if needed
-if [ "$APK_EXISTS" = false ]; then
-    echo ""
-    echo "🔨 Step 2/3: Building Android APK..."
-    
-    # Run the build script
-    if [ -f "scripts/build-android-apk-debug.sh" ]; then
-        bash scripts/build-android-apk-debug.sh
-    else
-        echo "❌ Error: Build script not found at scripts/build-android-apk-debug.sh"
-        exit 1
-    fi
-else
-    echo ""
-    echo "⏭️  Step 2/3: Skipping build (valid APK already exists)"
-fi
-
-# Step 3: Verify final state
-echo ""
-echo "🔍 Step 3/3: Final verification..."
-
-if [ ! -f "public/assets/primepost.apk" ]; then
-    echo "❌ Error: APK not found after staging"
-    exit 1
-fi
-
-if [ ! -f "public/assets/primepost.apk.meta.json" ]; then
-    echo "❌ Error: Metadata not found after staging"
-    exit 1
-fi
-
-FINAL_SIZE=$(stat -f%z "public/assets/primepost.apk" 2>/dev/null || stat -c%s "public/assets/primepost.apk" 2>/dev/null)
-MIN_SIZE=1048576
-
-if [ "$FINAL_SIZE" -lt "$MIN_SIZE" ]; then
-    echo "❌ Error: Final APK is too small ($FINAL_SIZE bytes)"
-    exit 1
-fi
-
-# Verify APK signature
-FIRST_BYTES=$(xxd -l 2 -p "public/assets/primepost.apk" 2>/dev/null || od -An -tx1 -N2 "public/assets/primepost.apk" 2>/dev/null | tr -d ' \n')
-if [ "$FIRST_BYTES" != "504b" ] && [ "$FIRST_BYTES" != "50 4b" ]; then
-    echo "❌ Error: Final APK has invalid signature (not a ZIP/APK file)"
-    exit 1
-fi
-
-# Read and verify metadata
-if command -v jq &> /dev/null; then
-    META_SIZE=$(jq -r '.size' "public/assets/primepost.apk.meta.json")
-    META_SHA256=$(jq -r '.sha256' "public/assets/primepost.apk.meta.json")
-    
-    if [ "$META_SIZE" != "$FINAL_SIZE" ]; then
-        echo "❌ Error: Metadata size ($META_SIZE) doesn't match APK size ($FINAL_SIZE)"
-        exit 1
-    fi
-    
-    if [ -z "$META_SHA256" ] || [ "$META_SHA256" = "null" ]; then
-        echo "❌ Error: Metadata has empty SHA-256"
-        exit 1
-    fi
-    
-    echo "✅ Metadata verified: size=$META_SIZE, sha256=$META_SHA256"
-else
-    echo "⚠️  Warning: jq not found, skipping metadata validation"
+  echo "Generating metadata..."
+  
+  APK_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
+  
+  # Generate SHA-256 checksum
+  if command -v sha256sum >/dev/null 2>&1; then
+    SHA256=$(sha256sum "$APK_DEST" | cut -d' ' -f1)
+  elif command -v shasum >/dev/null 2>&1; then
+    SHA256=$(shasum -a 256 "$APK_DEST" | cut -d' ' -f1)
+  else
+    SHA256="unavailable"
+  fi
+  
+  # Create metadata JSON
+  cat > "$META_DEST" <<EOF
+{
+  "filename": "primepost.apk",
+  "size": $APK_SIZE,
+  "sha256": "$SHA256",
+  "buildDate": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+  
+  echo "✓ Metadata generated"
 fi
 
 echo ""
-echo "✅ Staging complete!"
+echo "=== Staging Complete ==="
+echo "APK: $APK_DEST"
+echo "Metadata: $META_DEST"
 echo ""
-echo "📱 Ready for deployment:"
-echo "   APK: public/assets/primepost.apk ($FINAL_SIZE bytes)"
-echo "   Metadata: public/assets/primepost.apk.meta.json"
+echo "Final validation:"
+APK_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
+echo "  APK size: $APK_SIZE bytes ($(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc 2>/dev/null || echo "N/A") MB)"
+HEADER=$(xxd -l 2 -p "$APK_DEST" 2>/dev/null || od -An -tx1 -N2 "$APK_DEST" | tr -d ' \n' || echo "")
+echo "  APK header: $HEADER (expected: 504b)"
+echo "  Metadata: $(cat "$META_DEST")"
 echo ""
-echo "🚀 You can now deploy the frontend with the APK included"
-echo "🎉 Done!"
+
+# Final validation
+if [ "$APK_SIZE" -lt 1048576 ]; then
+  echo "✗ FATAL: APK is too small ($APK_SIZE bytes)"
+  exit 1
+fi
+
+if [ "$HEADER" != "504b" ] && [ "$HEADER" != "50 4b" ]; then
+  echo "✗ FATAL: APK does not have valid PK header"
+  exit 1
+fi
+
+echo "✓ All validations passed. APK is ready for deployment."
+exit 0

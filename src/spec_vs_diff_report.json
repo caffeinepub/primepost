@@ -1,23 +1,79 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T22:45:17.479Z",
-  "summary": "The diff shows `LanguageProvider` being imported into `frontend/src/App.tsx`, but the provided truncated snippet does not include the part of the render tree where the provider would wrap the router/component tree. Therefore, it’s not possible to confirm from the diff summary alone that the React tree is actually wrapped in `LanguageProvider` to eliminate the runtime error.",
+  "generatedAt": "2026-02-11T23:18:27.857Z",
+  "summary": "Diff adds Netlify-style static hosting rules to force correct Content-Type and prevent SPA fallback for the APK/metadata, and adds/updates staging/validation scripts. However, the changes shown do not clearly wire the staging step into an actual deploy pipeline, and several extra changes (frontend APK integrity utility, backend edits, docs/.gitattributes) appear unrelated to the request.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
-      "reason": "Although `LanguageProvider` is imported in `frontend/src/App.tsx`, the truncated diff snippet does not show the JSX where the provider wraps the application/router tree; thus the core requirement cannot be verified as implemented from the available evidence.",
+      "requirement": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` and serves the metadata JSON at `/assets/primepost.apk.meta.json` (APK >= 1MB and starts with `PK`; metadata size matches).",
+      "reason": "The diff shows hosting rules and scripts, but does not show that `frontend/public/assets/primepost.apk` (the actual binary) is present/committed or otherwise guaranteed to be deployed. The staging scripts can generate it locally, but the diff summary provides no evidence that the deployed artifact will include the APK binary and matching metadata.",
       "evidence": [
-        "frontend/src/App.tsx (truncated)"
+        "frontend/scripts/stage-android-apk-assets.sh",
+        "frontend/scripts/stage-android-apk-assets.ps1",
+        "frontend/public/_redirects",
+        "frontend/public/_headers"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Add a pre-deploy staging step that runs `frontend/scripts/stage-android-apk-assets.sh` (or platform equivalent) and fails the build/deploy if validation fails.",
+      "reason": "A wrapper script (`predeploy-stage-apk-assets.sh`) was added, but the diff summary does not show any CI/deploy configuration (e.g., package.json scripts, GitHub Actions, dfx deploy hooks, etc.) being updated to actually run it before deployment. Therefore it is not evidenced that the deployment pipeline executes staging and blocks deploy on failure.",
+      "evidence": [
+        "frontend/scripts/predeploy-stage-apk-assets.sh"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.42,
+  "hallucinated_features": [
+    {
+      "description": "Frontend runtime validation utilities for checking deployed APK integrity via HEAD/range requests (`validateDeployedApk`, `getApkMetadata`).",
+      "reason": "BuildRequest focuses on deployment/static serving and a pre-deploy staging step; it does not request adding client-side runtime validation logic.",
+      "evidence": [
+        "frontend/src/utils/apkIntegrity.ts"
+      ]
+    },
+    {
+      "description": "Changes to backend Motoko actor (`backend/main.mo`).",
+      "reason": "BuildRequest constraints mention keeping backend a single actor, but the requested work is about hosting `/assets/primepost.apk` as a static asset; the diff summary shows backend edits without a stated need tied to APK hosting.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Adding `.gitattributes` rules for APK/binary file handling.",
+      "reason": "Not requested by the BuildRequest requirements/AC; it may be helpful but is extra scope.",
+      "evidence": [
+        "frontend/.gitattributes"
+      ]
+    },
+    {
+      "description": "Adding Android APK build/deployment documentation.",
+      "reason": "Not requested in the requirements; extra scope beyond fixing deployment behavior.",
+      "evidence": [
+        "frontend/docs/android-apk-build.md"
+      ]
+    },
+    {
+      "description": "Adding Netlify-specific `_headers` and `_redirects` configuration files.",
+      "reason": "REQ-3 asks to configure static asset serving, but it does not specify Netlify; these files are platform-specific and may be unrequested/incorrect depending on the actual hosting stack.",
+      "evidence": [
+        "frontend/public/_headers",
+        "frontend/public/_redirects"
+      ]
+    }
+  ],
+  "confidence": 0.66,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
+    "frontend/.gitattributes",
+    "frontend/docs/android-apk-build.md",
+    "frontend/public/_headers",
+    "frontend/public/_redirects",
+    "frontend/scripts/predeploy-stage-apk-assets.sh",
+    "frontend/scripts/stage-android-apk-assets.ps1",
+    "frontend/scripts/stage-android-apk-assets.sh",
+    "frontend/src/utils/apkIntegrity.ts",
     "project_state.json"
   ]
 }

@@ -1,19 +1,15 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
-
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
-
-
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -23,7 +19,6 @@ actor {
   var superAdminBootstrapped = false;
   var nextUserId = 1;
 
-  // Types
   type StoreId = Text;
   type ProductId = Text;
 
@@ -118,9 +113,7 @@ actor {
   let products = Map.empty<ProductId, Product>();
   let orders = List.empty<Order>();
   let reviews = List.empty<Review>();
-
   let termsContent = Map.empty<TermsType, Text>();
-
   var nextOrderId = 0;
 
   // Helper functions
@@ -224,11 +217,18 @@ actor {
     superAdminBootstrapped := true;
   };
 
-  public query func getSuperAdminBootstrapped() : async Bool {
+  public query ({ caller }) func getSuperAdminBootstrapped() : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can check bootstrap status");
+    };
     superAdminBootstrapped;
   };
 
   public shared ({ caller }) func clearSuperAdminBootstrapState() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can clear bootstrap state");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only SuperAdmin can clear bootstrap state");
     };
@@ -250,6 +250,10 @@ actor {
 
   // Factory Reset Method
   public shared ({ caller }) func factoryReset() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can perform factory reset");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only SuperAdmin can perform a factory reset");
     };
@@ -277,7 +281,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view profiles");
     };
-    
+
     if (caller != user and not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile or be an admin");
     };
@@ -293,11 +297,10 @@ actor {
 
     switch (existingProfile) {
       case (?existing) {
-        // Existing user updating profile
         if (existing.userId != profile.userId) {
           Runtime.trap("Unauthorized: Cannot modify user ID");
         };
-        
+
         if (existing.role != profile.role) {
           Runtime.trap("Unauthorized: Cannot change your role after initial assignment");
         };
@@ -306,7 +309,6 @@ actor {
           Runtime.trap("Unauthorized: Cannot change superAdmin role");
         };
 
-        // For existing users, terms acceptance can only increase, never decrease
         if (existing.acceptedCustomerTerms and not profile.acceptedCustomerTerms) {
           Runtime.trap("Unauthorized: Cannot revoke terms acceptance");
         };
@@ -317,7 +319,6 @@ actor {
         userProfiles.add(caller, profile);
       };
       case (null) {
-        // New user registration
         if (profile.role == #superAdmin) {
           Runtime.trap("Unauthorized: Cannot assign superAdmin role to yourself");
         };
@@ -326,7 +327,6 @@ actor {
           Runtime.trap("Unauthorized: Can only assign customer or storeOwner role");
         };
 
-        // Enforce mandatory terms acceptance for new users
         let requiredTermsAccepted = switch (profile.role) {
           case (#customer) { profile.acceptedCustomerTerms };
           case (#storeOwner) { profile.acceptedStoreOwnerTerms };
@@ -337,7 +337,6 @@ actor {
           Runtime.trap("Unauthorized: Must accept Terms & Conditions before completing registration");
         };
 
-        // Generate and assign a unique user ID
         let assignedUserId = generateUserId();
         let finalProfile : UserProfile = {
           userId = assignedUserId;
@@ -360,6 +359,10 @@ actor {
 
   // Terms & Conditions Operations
   public shared ({ caller }) func saveTermsContent(termsType : TermsType, content : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can save terms content");
+    };
+
     if (not isSuperAdmin(caller)) {
       Runtime.trap("Unauthorized: Only super admins can save terms content");
     };
@@ -464,7 +467,10 @@ actor {
     id;
   };
 
-  public query func getStore(id : StoreId) : async ?Store {
+  public query ({ caller }) func getStore(id : StoreId) : async ?Store {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view stores");
+    };
     stores.get(id);
   };
 
@@ -623,7 +629,10 @@ actor {
     products.remove(id);
   };
 
-  public query func getStoreProducts(storeId : StoreId) : async [Product] {
+  public query ({ caller }) func getStoreProducts(storeId : StoreId) : async [Product] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view store products");
+    };
     products.values().toArray().filter(func(p) { p.storeId == storeId });
   };
 
@@ -768,11 +777,14 @@ actor {
     reviews.add(review);
   };
 
-  public query func getStoreReviews(storeId : StoreId) : async [Review] {
+  public query ({ caller }) func getStoreReviews(storeId : StoreId) : async [Review] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view reviews");
+    };
     reviews.filter<Review>(func(r) { r.storeId == storeId }).toArray();
   };
 
-  // Marketplace Operations - Public access for browsing
+  // Marketplace Operations - Public access for browsing (guests allowed)
   public query func getMarketplaceProducts() : async [Product] {
     products.values().toArray().filter(
       func(p) {

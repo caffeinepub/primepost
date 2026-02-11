@@ -1,21 +1,93 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Wrap app with LanguageProvider to prevent useLanguage runtime crash",
+  "title": "Fix static APK asset deployment at /assets/primepost.apk",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Wrap the routed React tree in LanguageProvider so useLanguage() in App.tsx (IndexComponent) and AppLayout is always inside provider context.",
+      "summary": "Ensure a valid, non-HTML APK binary and matching metadata are present in built frontend assets at the exact /assets paths.",
       "acceptanceCriteria": [
-        "Loading any route (including `/`) no longer throws the error \"useLanguage must be used within a LanguageProvider\" in the browser console.",
-        "`useLanguage()` works in `IndexComponent` (home page) and `AppLayout` (header language selector + translated nav/footer) without crashing.",
-        "The app renders successfully without requiring changes to immutable provider bootstrap files (e.g., `frontend/src/main.tsx`)."
+        "Visiting `/assets/primepost.apk` returns a binary file download (not an HTML document).",
+        "A HEAD request to `/assets/primepost.apk` returns a non-HTML Content-Type and a Content-Length >= 1,048,576 bytes.",
+        "Fetching the first two bytes of `/assets/primepost.apk` yields `0x50 0x4B` (\"PK\").",
+        "`/assets/primepost.apk.meta.json` is accessible and contains a numeric `size` matching the deployed APK size."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/utils/apkIntegrity.ts",
           "operation": "modify",
-          "description": "Import `LanguageProvider` from `frontend/src/i18n/LanguageProvider.tsx` and wrap the existing app tree (currently wrapped by `ThemeProvider`) so that `RouterProvider` (and therefore all routes/layouts, including `IndexComponent` and `AppLayout`) render within `LanguageProvider` context, eliminating the runtime error."
+          "description": "Tighten deployed-APK validation so it conclusively distinguishes binary APK vs HTML fallback: treat only HTML/text as invalid content types, require size>=1MB, ensure PK header check uses Range where available, and provide clear error strings aligned with acceptance criteria."
+        },
+        {
+          "path": "frontend/src/pages/public/ApkDownloadPage.tsx",
+          "operation": "modify",
+          "description": "Ensure the download page always points to the exact required paths (`/assets/primepost.apk` and `/assets/primepost.apk.meta.json`) and surfaces validation/metadata mismatch errors clearly to help confirm the deployed file is not an HTML fallback."
+        },
+        {
+          "path": "frontend/.gitattributes",
+          "operation": "modify",
+          "description": "Ensure `.apk` and `.json` metadata are explicitly treated as binary/text appropriately to avoid line-ending or filter corruption of `frontend/public/assets/primepost.apk` during commits/exports."
+        },
+        {
+          "path": "frontend/public/assets/.gitkeep",
+          "operation": "create",
+          "description": "Add a placeholder file to ensure `frontend/public/assets/` exists in version control/exports so the staging step can reliably place `primepost.apk` and `primepost.apk.meta.json` there before deployment."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a pre-deploy staging/validation step that runs the existing staging script and fails deployment if validation fails.",
+      "acceptanceCriteria": [
+        "The deployment pipeline runs the staging script before deploying the frontend assets.",
+        "If the APK is missing, < 1 MB, or does not start with `PK`, the deployment stops with a clear error message.",
+        "After a successful deployment, the APK download page no longer reports `Content-Type: text/html` for the deployed APK."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.sh",
+          "operation": "modify",
+          "description": "Harden staging validations and make errors unambiguous for CI: ensure failures are non-zero exits for missing APK/metadata, size < 1MB, PK header mismatch, and metadata size mismatch; ensure script prints the final staged file paths `public/assets/primepost.apk` and `public/assets/primepost.apk.meta.json` for debugging."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.ps1",
+          "operation": "modify",
+          "description": "Mirror the same CI-friendly validation behavior as the shell script (clear errors, non-zero exit on any invalid state) to support Windows runners/platform-equivalent command runners."
+        },
+        {
+          "path": "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "operation": "create",
+          "description": "Create a small predeploy wrapper that runs `frontend/scripts/stage-android-apk-assets.sh` (or selects the platform-equivalent runner) and fails fast if staging/validation fails; intended to be invoked by the deployment pipeline prior to uploading static assets."
+        },
+        {
+          "path": "frontend/docs/android-apk-build.md",
+          "operation": "modify",
+          "description": "Document the required pre-deploy staging command and expected artifacts so deployment operators/CI can reliably run staging before deploying frontend assets."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Prevent SPA rewrite/fallback from intercepting .apk requests and ensure .apk responses use an APK-appropriate binary Content-Type.",
+      "acceptanceCriteria": [
+        "Requesting `/assets/primepost.apk` does not return the app HTML shell under any routing mode (direct navigation, refresh, or deep link).",
+        "Response headers for `/assets/primepost.apk` indicate an APK/binary Content-Type rather than `text/html` or `text/plain`."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/_redirects",
+          "operation": "create",
+          "description": "Add static-host redirect rules (where supported) to prevent SPA fallback rewrites for `/assets/primepost.apk` and `/assets/primepost.apk.meta.json`, ensuring these paths are served as static files rather than rewritten to the HTML app shell."
+        },
+        {
+          "path": "frontend/public/_headers",
+          "operation": "create",
+          "description": "Add static-host header rules (where supported) to force an APK-appropriate Content-Type for `/assets/primepost.apk` (e.g., `application/vnd.android.package-archive`) and ensure metadata JSON is served as `application/json`, preventing `text/html`/`text/plain` responses."
+        },
+        {
+          "path": "frontend/src/utils/apkIntegrity.ts",
+          "operation": "modify",
+          "description": "Update content-type validation logic to explicitly accept common binary APK content types (including `application/vnd.android.package-archive` and `application/octet-stream`) while continuing to fail on `text/html`/`text/plain`, matching the requirement that .apk not be rewritten to SPA HTML."
         }
       ]
     }

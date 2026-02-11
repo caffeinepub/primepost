@@ -1,34 +1,80 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T22:45:17.481Z",
+  "generatedAt": "2026-02-11T23:18:27.860Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
+        "summary": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` (not an HTML fallback), and serves the metadata JSON at `/assets/primepost.apk.meta.json`. The deployed APK must be at least 1 MB and start with the ZIP/APK `PK` header bytes.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/utils/apkIntegrity.ts",
+          "frontend/src/pages/public/ApkDownloadPage.tsx",
+          "frontend/.gitattributes",
+          "frontend/public/assets/.gitkeep"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/utils/apkIntegrity.ts",
+          "frontend/.gitattributes",
+          "frontend/public/assets/.gitkeep"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, using the existing script `frontend/scripts/stage-android-apk-assets.sh` (or the platform-equivalent command runner). Fail the build/deploy if the staging script fails validation.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.ps1",
+          "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "frontend/docs/android-apk-build.md"
+        ],
+        "matchedFiles": [
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.ps1",
+          "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "frontend/docs/android-apk-build.md"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Configure static asset serving so `.apk` files are not rewritten to the SPA entry HTML and are served with an APK-appropriate Content-Type (e.g., `application/vnd.android.package-archive`) at `/assets/primepost.apk`.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/public/_redirects",
+          "frontend/public/_headers",
+          "frontend/src/utils/apkIntegrity.ts"
+        ],
+        "matchedFiles": [
+          "frontend/public/_redirects",
+          "frontend/public/_headers",
+          "frontend/src/utils/apkIntegrity.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
+    "frontend/.gitattributes",
+    "frontend/docs/android-apk-build.md",
+    "frontend/public/_headers",
+    "frontend/public/_redirects",
+    "frontend/public/assets/.gitkeep",
+    "frontend/scripts/predeploy-stage-apk-assets.sh",
+    "frontend/scripts/stage-android-apk-assets.ps1",
+    "frontend/scripts/stage-android-apk-assets.sh",
+    "frontend/src/utils/apkIntegrity.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

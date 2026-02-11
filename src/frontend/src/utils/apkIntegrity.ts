@@ -52,6 +52,10 @@ export async function getApkMetadata(): Promise<ApkMetadata> {
 /**
  * Validates the deployed APK by checking its header and content type
  * This helps detect if the server is serving HTML instead of the binary APK
+ * 
+ * Updated to treat only HTML/text content types as invalid, and accept
+ * common binary APK content types including application/vnd.android.package-archive
+ * and application/octet-stream
  */
 export async function validateDeployedApk(): Promise<ApkValidationResult> {
   const errors: string[] = [];
@@ -70,51 +74,57 @@ export async function validateDeployedApk(): Promise<ApkValidationResult> {
       size = parseInt(contentLength, 10);
     }
 
-    // Check if content-type indicates HTML
-    if (contentType && (contentType.includes('text/html') || contentType.includes('text/plain'))) {
-      isHtml = true;
-      errors.push(`Server is returning HTML/text (Content-Type: ${contentType}) instead of binary APK`);
+    // Check if content-type indicates HTML or plain text (invalid for APK)
+    // Accept: application/vnd.android.package-archive, application/octet-stream, or any binary type
+    // Reject: text/html, text/plain
+    if (contentType) {
+      const lowerContentType = contentType.toLowerCase();
+      if (lowerContentType.includes('text/html') || lowerContentType.includes('text/plain')) {
+        isHtml = true;
+        errors.push(`Server is returning HTML/text (Content-Type: ${contentType}) instead of binary APK`);
+      }
     }
 
-    // Check size
+    // Check size - must be at least 1 MB
     if (size > 0 && size < 1048576) {
-      errors.push(`File is too small (${formatBytes(size)}). Valid APK should be at least 1 MB`);
+      errors.push(`File is too small (${size} Bytes). Valid APK should be at least 1 MB`);
     }
 
     // Now fetch the first 2 bytes to verify PK header
+    // Try range request first (more efficient), fall back to full fetch if needed
     try {
+      let bytes: Uint8Array | null = null;
+      
+      // Try range request
       const rangeResponse = await fetch('/assets/primepost.apk', {
         headers: { 'Range': 'bytes=0-1' }
       });
 
-      if (rangeResponse.ok) {
+      if (rangeResponse.ok && rangeResponse.status === 206) {
+        // Range request succeeded
         const buffer = await rangeResponse.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
+        bytes = new Uint8Array(buffer);
+      } else {
+        // Range not supported, fetch full file (or at least first chunk)
+        const fullResponse = await fetch('/assets/primepost.apk');
+        const buffer = await fullResponse.arrayBuffer();
+        bytes = new Uint8Array(buffer);
         
-        // Check for PK signature (0x50 0x4B)
-        if (bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4B) {
+        // Update size if we got it from full response
+        if (bytes.length > 0 && size === 0) {
+          size = bytes.length;
+        }
+      }
+      
+      // Check for PK signature (0x50 0x4B)
+      if (bytes && bytes.length >= 2) {
+        if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
           hasValidHeader = true;
         } else {
           errors.push(`Invalid APK signature. Expected PK header (0x50 0x4B), got: 0x${bytes[0]?.toString(16).padStart(2, '0')} 0x${bytes[1]?.toString(16).padStart(2, '0')}`);
         }
       } else {
-        // If range request fails, try fetching first few bytes normally
-        const fullResponse = await fetch('/assets/primepost.apk');
-        const buffer = await fullResponse.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        
-        if (bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4B) {
-          hasValidHeader = true;
-        } else if (bytes.length < 2) {
-          errors.push('File is empty or too small to verify');
-        } else {
-          errors.push(`Invalid APK signature. Expected PK header, got: 0x${bytes[0].toString(16).padStart(2, '0')} 0x${bytes[1].toString(16).padStart(2, '0')}`);
-        }
-        
-        // Update size if we got it from full response
-        if (bytes.length > 0) {
-          size = bytes.length;
-        }
+        errors.push('File is empty or too small to verify APK signature');
       }
     } catch (headerError) {
       errors.push(`Failed to verify APK header: ${headerError instanceof Error ? headerError.message : 'Unknown error'}`);
@@ -124,6 +134,11 @@ export async function validateDeployedApk(): Promise<ApkValidationResult> {
     errors.push(`Failed to validate APK: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
+  // APK is valid only if:
+  // 1. Has valid PK header
+  // 2. Is not HTML/text
+  // 3. Size is at least 1 MB
+  // 4. No validation errors
   const isValid = hasValidHeader && !isHtml && size >= 1048576 && errors.length === 0;
 
   return {
@@ -136,33 +151,6 @@ export async function validateDeployedApk(): Promise<ApkValidationResult> {
   };
 }
 
-/**
- * Cross-checks deployed APK against metadata
- */
-export async function verifyApkIntegrity(metadata: ApkMetadata): Promise<{ matches: boolean; errors: string[] }> {
-  const errors: string[] = [];
-  
-  if (!metadata.available) {
-    errors.push('Metadata not available');
-    return { matches: false, errors };
-  }
-
-  const validation = await validateDeployedApk();
-  
-  if (!validation.isValid) {
-    errors.push(...validation.errors);
-  }
-
-  if (validation.size > 0 && validation.size !== metadata.size) {
-    errors.push(`Size mismatch: metadata reports ${formatBytes(metadata.size)}, but deployed file is ${formatBytes(validation.size)}`);
-  }
-
-  return {
-    matches: errors.length === 0,
-    errors,
-  };
-}
-
 function createUnavailableMetadata(): ApkMetadata {
   return {
     filename: 'primepost.apk',
@@ -170,26 +158,14 @@ function createUnavailableMetadata(): ApkMetadata {
     sizeFormatted: 'Unknown',
     sha256: 'unavailable',
     available: false,
-    suspiciouslySmall: false,
+    suspiciouslySmall: true,
   };
 }
 
-/**
- * Formats bytes into human-readable string
- */
-export function formatBytes(bytes: number): string {
+function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
-/**
- * Verifies if a given size indicates a valid APK
- */
-export function isValidApkSize(bytes: number): boolean {
-  return bytes >= 1048576; // At least 1 MB
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
