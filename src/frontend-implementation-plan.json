@@ -1,93 +1,130 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix static APK asset deployment at /assets/primepost.apk",
+  "title": "PrimePost v22 Android APK static hosting and predeploy validation",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Ensure a valid, non-HTML APK binary and matching metadata are present in built frontend assets at the exact /assets paths.",
+      "summary": "Serve a real, installable PrimePost Version 22 Android APK binary at /assets/primepost.apk as a static asset.",
       "acceptanceCriteria": [
-        "Visiting `/assets/primepost.apk` returns a binary file download (not an HTML document).",
-        "A HEAD request to `/assets/primepost.apk` returns a non-HTML Content-Type and a Content-Length >= 1,048,576 bytes.",
-        "Fetching the first two bytes of `/assets/primepost.apk` yields `0x50 0x4B` (\"PK\").",
-        "`/assets/primepost.apk.meta.json` is accessible and contains a numeric `size` matching the deployed APK size."
+        "A request to `/assets/primepost.apk` returns `Content-Type` appropriate for an APK (e.g., `application/vnd.android.package-archive` or `application/octet-stream`), not `text/html` or `text/plain`.",
+        "The downloaded `/assets/primepost.apk` file size is >= 1 MB.",
+        "The first two bytes of `/assets/primepost.apk` are the ZIP/APK signature `PK` (0x50 0x4B).",
+        "Installing the downloaded APK on an Android device/emulator succeeds (no “problem parsing the package” error)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/apkIntegrity.ts",
+          "path": "frontend/android/app/build.gradle",
           "operation": "modify",
-          "description": "Tighten deployed-APK validation so it conclusively distinguishes binary APK vs HTML fallback: treat only HTML/text as invalid content types, require size>=1MB, ensure PK header check uses Range where available, and provide clear error strings aligned with acceptance criteria."
+          "description": "Ensure the Android app config builds an APK with PrimePost Version 22 metadata (e.g., versionName/versionCode aligned to v22) so the produced artifact is the correct version and installable."
         },
         {
-          "path": "frontend/src/pages/public/ApkDownloadPage.tsx",
-          "operation": "modify",
-          "description": "Ensure the download page always points to the exact required paths (`/assets/primepost.apk` and `/assets/primepost.apk.meta.json`) and surfaces validation/metadata mismatch errors clearly to help confirm the deployed file is not an HTML fallback."
-        },
-        {
-          "path": "frontend/.gitattributes",
-          "operation": "modify",
-          "description": "Ensure `.apk` and `.json` metadata are explicitly treated as binary/text appropriately to avoid line-ending or filter corruption of `frontend/public/assets/primepost.apk` during commits/exports."
-        },
-        {
-          "path": "frontend/public/assets/.gitkeep",
+          "path": "frontend/public/assets/.keep",
           "operation": "create",
-          "description": "Add a placeholder file to ensure `frontend/public/assets/` exists in version control/exports so the staging step can reliably place `primepost.apk` and `primepost.apk.meta.json` there before deployment."
+          "description": "Add a keep file so `frontend/public/assets/` is always present in the repo/build output, ensuring static asset publishing includes the assets directory."
+        },
+        {
+          "path": "frontend/public/assets/primepost.apk",
+          "operation": "create",
+          "description": "Add the actual built PrimePost v22 APK binary to be served statically. Validate during implementation that the file is >= 1 MB and begins with `PK` so it is a real installable APK (not HTML/text)."
+        },
+        {
+          "path": "frontend/scripts/build-android-apk-debug.sh",
+          "operation": "modify",
+          "description": "Confirm the build script produces/copies the v22 APK to `frontend/public/assets/primepost.apk` and retains/strengthens binary validity checks (size >= 1 MB and PK header) to prevent publishing non-APK content."
+        },
+        {
+          "path": "frontend/scripts/build-android-apk-debug.ps1",
+          "operation": "modify",
+          "description": "Confirm the Windows build script produces/copies the v22 APK to `frontend/public/assets/primepost.apk` and retains/strengthens binary validity checks (size >= 1 MB and PK header) to prevent publishing non-APK content."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add a pre-deploy staging/validation step that runs the existing staging script and fails deployment if validation fails.",
+      "summary": "Deploy an APK metadata JSON at /assets/primepost.apk.meta.json that matches the deployed APK.",
       "acceptanceCriteria": [
-        "The deployment pipeline runs the staging script before deploying the frontend assets.",
-        "If the APK is missing, < 1 MB, or does not start with `PK`, the deployment stops with a clear error message.",
-        "After a successful deployment, the APK download page no longer reports `Content-Type: text/html` for the deployed APK."
+        "A request to `/assets/primepost.apk.meta.json` returns valid JSON with at least `filename`, `size`, `sha256`, and `buildDate` fields.",
+        "The metadata `filename` is `primepost.apk`.",
+        "The metadata `size` matches the deployed APK’s byte size at `/assets/primepost.apk`."
       ],
       "file_operations": [
         {
+          "path": "frontend/public/assets/primepost.apk.meta.json",
+          "operation": "create",
+          "description": "Add the deployed metadata JSON for the APK with required fields: `filename` (must be `primepost.apk`), `size` (must match the APK bytes), `sha256`, and `buildDate`."
+        },
+        {
           "path": "frontend/scripts/stage-android-apk-assets.sh",
           "operation": "modify",
-          "description": "Harden staging validations and make errors unambiguous for CI: ensure failures are non-zero exits for missing APK/metadata, size < 1MB, PK header mismatch, and metadata size mismatch; ensure script prints the final staged file paths `public/assets/primepost.apk` and `public/assets/primepost.apk.meta.json` for debugging."
+          "description": "Tighten metadata validation/generation to guarantee `frontend/public/assets/primepost.apk.meta.json` exists, contains required fields, and that `filename` is `primepost.apk` and `size` matches the staged APK byte size."
         },
         {
           "path": "frontend/scripts/stage-android-apk-assets.ps1",
           "operation": "modify",
-          "description": "Mirror the same CI-friendly validation behavior as the shell script (clear errors, non-zero exit on any invalid state) to support Windows runners/platform-equivalent command runners."
+          "description": "Tighten metadata validation/generation to guarantee `frontend/public/assets/primepost.apk.meta.json` exists, contains required fields, and that `filename` is `primepost.apk` and `size` matches the staged APK byte size."
         },
         {
-          "path": "frontend/scripts/predeploy-stage-apk-assets.sh",
-          "operation": "create",
-          "description": "Create a small predeploy wrapper that runs `frontend/scripts/stage-android-apk-assets.sh` (or selects the platform-equivalent runner) and fails fast if staging/validation fails; intended to be invoked by the deployment pipeline prior to uploading static assets."
-        },
-        {
-          "path": "frontend/docs/android-apk-build.md",
+          "path": "frontend/src/utils/apkIntegrity.ts",
           "operation": "modify",
-          "description": "Document the required pre-deploy staging command and expected artifacts so deployment operators/CI can reliably run staging before deploying frontend assets."
+          "description": "Ensure the client-side integrity/metadata fetch logic reflects the required metadata fields and flags mismatches clearly (including filename/size mismatches) to aid detection of broken deployments."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Prevent SPA rewrite/fallback from intercepting .apk requests and ensure .apk responses use an APK-appropriate binary Content-Type.",
+      "summary": "Add/ensure a pre-deploy staging step that blocks deployment if the staged APK assets are missing or invalid.",
       "acceptanceCriteria": [
-        "Requesting `/assets/primepost.apk` does not return the app HTML shell under any routing mode (direct navigation, refresh, or deep link).",
-        "Response headers for `/assets/primepost.apk` indicate an APK/binary Content-Type rather than `text/html` or `text/plain`."
+        "The deployment pipeline (or equivalent predeploy step) runs the existing staging wrapper `frontend/scripts/predeploy-stage-apk-assets.sh` (which calls `frontend/scripts/stage-android-apk-assets.sh` or `frontend/scripts/stage-android-apk-assets.ps1`).",
+        "If the staged `frontend/public/assets/primepost.apk` is missing, < 1 MB, or does not start with `PK`, the build/deploy is blocked with a non-zero exit code.",
+        "On successful staging, `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are ready to be served as static assets."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "operation": "modify",
+          "description": "Ensure the wrapper performs/propagates strict failure (non-zero exit) when APK assets are missing/invalid, and clearly logs what checks failed so deploy cannot proceed with broken APK assets."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.sh",
+          "operation": "modify",
+          "description": "Ensure staging strictly validates: APK exists in `frontend/public/assets/primepost.apk`, size >= 1 MB, first bytes are PK, and metadata exists and matches; exit non-zero on any failure to block deploy."
+        },
+        {
+          "path": "frontend/scripts/stage-android-apk-assets.ps1",
+          "operation": "modify",
+          "description": "Ensure staging strictly validates: APK exists in `frontend/public/assets/primepost.apk`, size >= 1 MB, first bytes are PK, and metadata exists and matches; exit non-zero on any failure to block deploy."
+        },
+        {
+          "path": "frontend/docs/android-apk-build.md",
+          "operation": "modify",
+          "description": "Document the required predeploy step for CI/CD: run `frontend/scripts/predeploy-stage-apk-assets.sh` and treat any non-zero exit as a hard deploy blocker; include explicit validation expectations (>= 1 MB, PK header, matching meta)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Configure static hosting so APK and metadata are served directly (no SPA rewrite) with correct content types.",
+      "acceptanceCriteria": [
+        "Requests to `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` are not routed to the SPA fallback (`/index.html`).",
+        "The static hosting rules in `frontend/public/_redirects` ensure `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` are served directly with `200`.",
+        "The static hosting rules in `frontend/public/_headers` set `Content-Type: application/vnd.android.package-archive` for `/assets/primepost.apk` and `Content-Type: application/json` for `/assets/primepost.apk.meta.json`."
       ],
       "file_operations": [
         {
           "path": "frontend/public/_redirects",
-          "operation": "create",
-          "description": "Add static-host redirect rules (where supported) to prevent SPA fallback rewrites for `/assets/primepost.apk` and `/assets/primepost.apk.meta.json`, ensuring these paths are served as static files rather than rewritten to the HTML app shell."
+          "operation": "modify",
+          "description": "Verify/adjust redirect rules so `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` are served as static files with 200 and are excluded from the SPA fallback rewrite."
         },
         {
           "path": "frontend/public/_headers",
-          "operation": "create",
-          "description": "Add static-host header rules (where supported) to force an APK-appropriate Content-Type for `/assets/primepost.apk` (e.g., `application/vnd.android.package-archive`) and ensure metadata JSON is served as `application/json`, preventing `text/html`/`text/plain` responses."
+          "operation": "modify",
+          "description": "Verify/adjust headers so `/assets/primepost.apk` is served with `Content-Type: application/vnd.android.package-archive` and `/assets/primepost.apk.meta.json` is served with `Content-Type: application/json`."
         },
         {
           "path": "frontend/src/utils/apkIntegrity.ts",
           "operation": "modify",
-          "description": "Update content-type validation logic to explicitly accept common binary APK content types (including `application/vnd.android.package-archive` and `application/octet-stream`) while continuing to fail on `text/html`/`text/plain`, matching the requirement that .apk not be rewritten to SPA HTML."
+          "description": "Keep the deployed-file validation aligned with the hosting rules: explicitly detect and report HTML/text responses and missing/incorrect content-type to catch SPA fallback misconfiguration."
         }
       ]
     }

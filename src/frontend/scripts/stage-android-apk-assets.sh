@@ -30,6 +30,8 @@ if [ -f "$APK_DEST" ]; then
   
   if [ "$APK_SIZE" -lt 1048576 ]; then
     echo "✗ ERROR: Existing APK is too small ($APK_SIZE bytes, expected >= 1 MB)"
+    echo "This indicates the APK was not properly built or deployed."
+    echo "The file may be an HTML error page instead of a real APK."
     exit 1
   fi
   
@@ -37,6 +39,8 @@ if [ -f "$APK_DEST" ]; then
   HEADER=$(xxd -l 2 -p "$APK_DEST" 2>/dev/null || od -An -tx1 -N2 "$APK_DEST" | tr -d ' \n' || echo "")
   if [ "$HEADER" != "504b" ] && [ "$HEADER" != "50 4b" ]; then
     echo "✗ ERROR: Existing APK does not have valid PK header (got: $HEADER)"
+    echo "Expected PK (0x50 0x4B) for valid ZIP/APK file."
+    echo "The file is likely an HTML error page or corrupted."
     exit 1
   fi
   
@@ -47,12 +51,40 @@ else
   # Check if source APK exists
   if [ ! -f "$APK_SOURCE" ]; then
     echo "✗ ERROR: Source APK not found at $APK_SOURCE"
-    echo "Please build the Android APK first using:"
-    echo "  cd frontend/android && ./gradlew assembleDebug"
+    echo ""
+    echo "The Android APK must be built before deployment."
+    echo "Please build the APK using one of these methods:"
+    echo ""
+    echo "  Method 1 - Full build script (recommended):"
+    echo "    cd frontend"
+    echo "    bash scripts/build-android-apk-debug.sh"
+    echo ""
+    echo "  Method 2 - Manual Gradle build:"
+    echo "    cd frontend/android"
+    echo "    ./gradlew assembleDebug"
+    echo "    cd .."
+    echo "    bash scripts/stage-android-apk-assets.sh"
+    echo ""
     exit 1
   fi
   
   echo "✓ Source APK found at $APK_SOURCE"
+  
+  # Validate source APK before copying
+  SOURCE_SIZE=$(stat -f%z "$APK_SOURCE" 2>/dev/null || stat -c%s "$APK_SOURCE" 2>/dev/null || echo "0")
+  
+  if [ "$SOURCE_SIZE" -lt 1048576 ]; then
+    echo "✗ ERROR: Source APK is too small ($SOURCE_SIZE bytes, expected >= 1 MB)"
+    echo "The Android build may have failed. Please rebuild the APK."
+    exit 1
+  fi
+  
+  SOURCE_HEADER=$(xxd -l 2 -p "$APK_SOURCE" 2>/dev/null || od -An -tx1 -N2 "$APK_SOURCE" | tr -d ' \n' || echo "")
+  if [ "$SOURCE_HEADER" != "504b" ] && [ "$SOURCE_HEADER" != "50 4b" ]; then
+    echo "✗ ERROR: Source APK does not have valid PK header (got: $SOURCE_HEADER)"
+    echo "The Android build produced an invalid APK. Please rebuild."
+    exit 1
+  fi
   
   # Copy APK to public assets
   echo "Copying APK to public assets..."
@@ -82,12 +114,24 @@ if [ -f "$META_DEST" ]; then
   
   # Validate metadata matches APK
   META_SIZE=$(grep -o '"size":[0-9]*' "$META_DEST" | cut -d: -f2 || echo "0")
+  META_FILENAME=$(grep -o '"filename":"[^"]*"' "$META_DEST" | cut -d'"' -f4 || echo "")
   ACTUAL_SIZE=$(stat -f%z "$APK_DEST" 2>/dev/null || stat -c%s "$APK_DEST" 2>/dev/null || echo "0")
   
-  if [ "$META_SIZE" != "$ACTUAL_SIZE" ]; then
+  # Check filename matches
+  if [ "$META_FILENAME" != "primepost.apk" ]; then
+    echo "⚠ WARNING: Metadata filename ($META_FILENAME) does not match expected (primepost.apk)"
+    echo "Regenerating metadata..."
+    REGENERATE=1
+  elif [ "$META_SIZE" != "$ACTUAL_SIZE" ]; then
     echo "⚠ WARNING: Metadata size ($META_SIZE) does not match APK size ($ACTUAL_SIZE)"
     echo "Regenerating metadata..."
-    
+    REGENERATE=1
+  else
+    echo "✓ Metadata is valid"
+    REGENERATE=0
+  fi
+  
+  if [ "$REGENERATE" -eq 1 ]; then
     # Generate SHA-256 checksum
     if command -v sha256sum >/dev/null 2>&1; then
       SHA256=$(sha256sum "$APK_DEST" | cut -d' ' -f1)
@@ -108,8 +152,6 @@ if [ -f "$META_DEST" ]; then
 EOF
     
     echo "✓ Metadata regenerated"
-  else
-    echo "✓ Metadata is valid"
   fi
 else
   echo "Generating metadata..."
@@ -154,11 +196,13 @@ echo ""
 # Final validation
 if [ "$APK_SIZE" -lt 1048576 ]; then
   echo "✗ FATAL: APK is too small ($APK_SIZE bytes)"
+  echo "Cannot deploy an APK smaller than 1 MB."
   exit 1
 fi
 
 if [ "$HEADER" != "504b" ] && [ "$HEADER" != "50 4b" ]; then
   echo "✗ FATAL: APK does not have valid PK header"
+  echo "The file is not a valid Android APK package."
   exit 1
 fi
 

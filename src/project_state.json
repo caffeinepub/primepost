@@ -1,40 +1,50 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "Project now focused on producing and correctly deploying a usable Android APK for the current live Version 22 of PrimePost.",
+  "architectural_notes": [
+    "APK downloads must serve the actual binary with correct Content-Type (application/vnd.android.package-archive) and a valid signed APK file."
+  ],
   "known_issues": [
-    "APK deployment/build failed with a deployment error (needs investigation to successfully produce/deploy APK)."
+    "Current APK download is invalid: server returns a 265-byte HTML page (Content-Type: text/html) instead of a signed APK (missing PK header), indicating APK build/deploy/hosting is misconfigured."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-the-deployed-site-serves-a-real-android-apk-binary-at-the-exact-path-assets-primepost-apk-not-an-html-fallback-and-serves-the-metadata-json-at-assets-primepost-apk-meta-json-the-deployed-apk-must-be-at-least-1-mb-and-start-with-the-zip-apk-pk-header-bytes",
-      "title": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` (not an HTML fallback), and serves the metadata JSON at `/assets/primepost.apk.meta.json`. The deployed APK must be at least 1 MB and start with the ZIP/APK `PK` header bytes.",
+      "id": "feature-ensure-the-deployed-site-serves-a-real-android-apk-binary-for-primepost-version-22-at-the-exact-path-assets-primepost-apk-not-an-html-page-and-that-the-apk-is-installable-on-android",
+      "title": "Ensure the deployed site serves a real Android APK binary for PrimePost Version 22 at the exact path `/assets/primepost.apk` (not an HTML page), and that the APK is installable on Android.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-pre-deploy-staging-step-that-guarantees-frontend-public-assets-primepost-apk-and-frontend-public-assets-primepost-apk-meta-json-exist-and-are-valid-before-deployment-using-the-existing-script-frontend-scripts-stage-android-apk-assets-sh-or-the-platform-equivalent-command-runner-fail-the-build-deploy-if-the-staging-script-fails-validation",
-      "title": "Add a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, using the existing script `frontend/scripts/stage-android-apk-assets.sh` (or the platform-equivalent command runner). Fail the build/deploy if the staging script fails validation.",
+      "id": "feature-ensure-the-apk-metadata-file-is-deployed-and-accessible-at-assets-primepost-apk-meta-json-and-that-it-matches-the-deployed-apk",
+      "title": "Ensure the APK metadata file is deployed and accessible at `/assets/primepost.apk.meta.json`, and that it matches the deployed APK.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-configure-static-asset-serving-so-apk-files-are-not-rewritten-to-the-spa-entry-html-and-are-served-with-an-apk-appropriate-content-type-e-g-application-vnd-android-package-archive-at-assets-primepost-apk",
-      "title": "Configure static asset serving so `.apk` files are not rewritten to the SPA entry HTML and are served with an APK-appropriate Content-Type (e.g., `application/vnd.android.package-archive`) at `/assets/primepost.apk`.",
+      "id": "feature-add-ensure-a-pre-deploy-staging-step-that-guarantees-frontend-public-assets-primepost-apk-and-frontend-public-assets-primepost-apk-meta-json-exist-and-are-valid-before-deployment-failing-the-build-deploy-if-validation-fails",
+      "title": "Add/ensure a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, failing the build/deploy if validation fails.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-configure-static-asset-serving-so-apk-and-metadata-requests-are-not-rewritten-to-the-spa-html-entry-and-are-served-with-correct-content-types",
+      "title": "Configure static asset serving so APK and metadata requests are not rewritten to the SPA HTML entry and are served with correct content types.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Fix APK deployment so /assets/primepost.apk serves a valid binary",
+  "projectName": "PrimePost",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

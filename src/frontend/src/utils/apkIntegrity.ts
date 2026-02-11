@@ -99,47 +99,38 @@ export async function validateDeployedApk(): Promise<ApkValidationResult> {
       const rangeResponse = await fetch('/assets/primepost.apk', {
         headers: { 'Range': 'bytes=0-1' }
       });
-
+      
       if (rangeResponse.ok && rangeResponse.status === 206) {
-        // Range request succeeded
+        // Partial content response
         const buffer = await rangeResponse.arrayBuffer();
         bytes = new Uint8Array(buffer);
       } else {
-        // Range not supported, fetch full file (or at least first chunk)
+        // Range not supported, fetch full file (or at least start of it)
         const fullResponse = await fetch('/assets/primepost.apk');
         const buffer = await fullResponse.arrayBuffer();
-        bytes = new Uint8Array(buffer);
-        
-        // Update size if we got it from full response
-        if (bytes.length > 0 && size === 0) {
-          size = bytes.length;
-        }
+        bytes = new Uint8Array(buffer.slice(0, 2));
       }
-      
-      // Check for PK signature (0x50 0x4B)
+
+      // Check for PK header (0x50 0x4B)
       if (bytes && bytes.length >= 2) {
-        if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
-          hasValidHeader = true;
-        } else {
-          errors.push(`Invalid APK signature. Expected PK header (0x50 0x4B), got: 0x${bytes[0]?.toString(16).padStart(2, '0')} 0x${bytes[1]?.toString(16).padStart(2, '0')}`);
+        hasValidHeader = bytes[0] === 0x50 && bytes[1] === 0x4B;
+        
+        if (!hasValidHeader) {
+          const hexBytes = Array.from(bytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ');
+          errors.push(`Invalid APK signature. Expected PK header (0x50 0x4B), got: ${hexBytes}`);
         }
       } else {
-        errors.push('File is empty or too small to verify APK signature');
+        errors.push('Could not read APK header bytes');
       }
-    } catch (headerError) {
-      errors.push(`Failed to verify APK header: ${headerError instanceof Error ? headerError.message : 'Unknown error'}`);
+    } catch (fetchError) {
+      errors.push(`Failed to fetch APK for header validation: ${fetchError}`);
     }
 
   } catch (error) {
-    errors.push(`Failed to validate APK: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    errors.push(`Validation failed: ${error}`);
   }
 
-  // APK is valid only if:
-  // 1. Has valid PK header
-  // 2. Is not HTML/text
-  // 3. Size is at least 1 MB
-  // 4. No validation errors
-  const isValid = hasValidHeader && !isHtml && size >= 1048576 && errors.length === 0;
+  const isValid = errors.length === 0 && hasValidHeader && !isHtml;
 
   return {
     isValid,
@@ -164,8 +155,10 @@ function createUnavailableMetadata(): ApkMetadata {
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
+  
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }

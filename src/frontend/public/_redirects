@@ -1,8 +1,8 @@
 # Prevent SPA fallback from intercepting APK and metadata requests
 # These files must be served as static assets, not rewritten to index.html
 
-/assets/primepost.apk  /assets/primepost.apk  200
-/assets/primepost.apk.meta.json  /assets/primepost.apk.meta.json  200
+/assets/primepost.apk  /assets/primepost.apk  200!
+/assets/primepost.apk.meta.json  /assets/primepost.apk.meta.json  200!
 
 # SPA fallback for all other routes
 /*  /index.html  200

@@ -3,7 +3,9 @@
 
 /assets/primepost.apk
   Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment; filename="primepost.apk"
   Cache-Control: public, max-age=3600
+  X-Content-Type-Options: nosniff
 
 /assets/primepost.apk.meta.json
   Content-Type: application/json

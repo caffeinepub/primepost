@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix deployment so `/assets/primepost.apk` serves a valid Android APK binary (not an HTML fallback) and ensure related metadata is correctly published.
+**Goal:** Produce and deploy a valid, installable Android APK for PrimePost Version 22 and serve it correctly as a static asset.
 
 **Planned changes:**
-- Ensure a real APK binary is deployed at `frontend/public/assets/primepost.apk` and metadata is deployed at `frontend/public/assets/primepost.apk.meta.json`.
-- Add a pre-deploy staging/validation step that runs `frontend/scripts/stage-android-apk-assets.sh` and fails the build/deploy on missing/invalid APK or metadata.
-- Configure static asset serving so `.apk` files are not rewritten to the SPA HTML entry and are served with an APK-appropriate Content-Type at `/assets/primepost.apk`.
+- Deploy a real APK binary at `/assets/primepost.apk` (not an HTML fallback) and ensure it is installable on Android.
+- Deploy a matching metadata file at `/assets/primepost.apk.meta.json` containing `filename`, `size`, `sha256`, and `buildDate` for the deployed APK.
+- Add/ensure a pre-deploy staging + validation step that fails the build/deploy if the APK or metadata is missing or invalid (e.g., too small or not starting with `PK`).
+- Configure static hosting rules so `/assets/primepost.apk` and `/assets/primepost.apk.meta.json` are served directly with `200` and correct `Content-Type` headers (no SPA rewrite to `/index.html`).
 
-**User-visible outcome:** Visiting `/assets/primepost.apk` downloads a valid APK (>= 1 MB and starting with `PK`), and `/assets/primepost.apk.meta.json` is accessible with a `size` that matches the deployed APK.
+**User-visible outcome:** Users can download `https://<site>/assets/primepost.apk` and install PrimePost Version 22 on Android; the matching metadata is available at `https://<site>/assets/primepost.apk.meta.json`.

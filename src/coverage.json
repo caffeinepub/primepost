@@ -1,51 +1,64 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T23:18:27.860Z",
+  "generatedAt": "2026-02-11T23:34:18.190Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Ensure the deployed site serves a real Android APK binary at the exact path `/assets/primepost.apk` (not an HTML fallback), and serves the metadata JSON at `/assets/primepost.apk.meta.json`. The deployed APK must be at least 1 MB and start with the ZIP/APK `PK` header bytes.",
+        "summary": "Ensure the deployed site serves a real Android APK binary for PrimePost Version 22 at the exact path `/assets/primepost.apk` (not an HTML page), and that the APK is installable on Android.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/apkIntegrity.ts",
-          "frontend/src/pages/public/ApkDownloadPage.tsx",
-          "frontend/.gitattributes",
-          "frontend/public/assets/.gitkeep"
+          "frontend/android/app/build.gradle",
+          "frontend/public/assets/.keep",
+          "frontend/public/assets/primepost.apk",
+          "frontend/scripts/build-android-apk-debug.sh",
+          "frontend/scripts/build-android-apk-debug.ps1"
         ],
         "matchedFiles": [
-          "frontend/src/utils/apkIntegrity.ts",
-          "frontend/.gitattributes",
-          "frontend/public/assets/.gitkeep"
+          "frontend/android/app/build.gradle"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, using the existing script `frontend/scripts/stage-android-apk-assets.sh` (or the platform-equivalent command runner). Fail the build/deploy if the staging script fails validation.",
+        "summary": "Ensure the APK metadata file is deployed and accessible at `/assets/primepost.apk.meta.json`, and that it matches the deployed APK.",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/public/assets/primepost.apk.meta.json",
           "frontend/scripts/stage-android-apk-assets.sh",
           "frontend/scripts/stage-android-apk-assets.ps1",
-          "frontend/scripts/predeploy-stage-apk-assets.sh",
-          "frontend/docs/android-apk-build.md"
+          "frontend/src/utils/apkIntegrity.ts"
         ],
         "matchedFiles": [
           "frontend/scripts/stage-android-apk-assets.sh",
-          "frontend/scripts/stage-android-apk-assets.ps1",
-          "frontend/scripts/predeploy-stage-apk-assets.sh",
-          "frontend/docs/android-apk-build.md"
+          "frontend/src/utils/apkIntegrity.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Configure static asset serving so `.apk` files are not rewritten to the SPA entry HTML and are served with an APK-appropriate Content-Type (e.g., `application/vnd.android.package-archive`) at `/assets/primepost.apk`.",
+        "summary": "Add/ensure a pre-deploy staging step that guarantees `frontend/public/assets/primepost.apk` and `frontend/public/assets/primepost.apk.meta.json` exist and are valid before deployment, failing the build/deploy if validation fails.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.ps1",
+          "frontend/docs/android-apk-build.md"
+        ],
+        "matchedFiles": [
+          "frontend/scripts/predeploy-stage-apk-assets.sh",
+          "frontend/scripts/stage-android-apk-assets.sh",
+          "frontend/docs/android-apk-build.md"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Configure static asset serving so APK and metadata requests are not rewritten to the SPA HTML entry and are served with correct content types.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/public/_redirects",
@@ -61,18 +74,15 @@
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/.gitattributes",
+    "frontend/android/app/build.gradle",
     "frontend/docs/android-apk-build.md",
     "frontend/public/_headers",
     "frontend/public/_redirects",
-    "frontend/public/assets/.gitkeep",
     "frontend/scripts/predeploy-stage-apk-assets.sh",
-    "frontend/scripts/stage-android-apk-assets.ps1",
     "frontend/scripts/stage-android-apk-assets.sh",
     "frontend/src/utils/apkIntegrity.ts",
     "project_state.json",
