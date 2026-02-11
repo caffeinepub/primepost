@@ -1,69 +1,102 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "PrimePost legal documents: publish provided Terms text and add Privacy Policy UI",
+  "title": "PrimePost: Admin bypass for Terms, robust Terms fallback, and public APK download route with 3-role landing copy",
   "requirements": [
     {
-      "id": "REQ-24",
-      "summary": "Provide a frontend publishing path to set the exact user-provided Customer Terms, Store Owner Terms, and Privacy Policy text (with [App Name] replaced by PrimePost) using existing legal-document save capability.",
+      "id": "REQ-41",
+      "summary": "Bypass Terms & Conditions requirement in ProfileSetupDialog when selecting Super Admin, while keeping Terms required for Customer and Store Owner.",
       "acceptanceCriteria": [
-        "Customer Terms content shown in the app matches the provided text, including \"Effective Date: 15 April 2026\" and \"Platform: PrimePost\", and does not contain \"[App Name]\".",
-        "Store Owner / Service Provider Terms content shown in the app matches the provided text and does not contain \"[App Name]\" (leave \"Effective Date: [Insert Date]\" as-is unless the user supplies a date).",
-        "Privacy Policy content shown in the app matches the provided text, including \"Operated by: WeMove All\", \"Country: Cameroon\", and \"PrimePost7@gmail.com\".",
-        "If the canister already has existing legal content in stable state, the upgrade path preserves existing content unless it is empty/unset (use conditional migration policy if schema changes are required)."
+        "When the user selects the Admin role during profile setup, the UI does not show a Terms & Conditions acceptance checkbox and does not block profile creation due to Terms not being accepted.",
+        "When the user selects Customer or Store Owner roles during profile setup, the Terms & Conditions acceptance checkbox is still required before continuing.",
+        "All user-facing text for validation/errors remains in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/legal/providedLegalText.ts",
-          "operation": "create",
-          "description": "Add exported constants for the three user-provided legal documents (Customer Terms, Store Owner Terms, Privacy Policy) with the placeholder token \"[App Name]\" replaced by \"PrimePost\" wherever it appears; keep the text exactly as provided otherwise."
-        },
-        {
-          "path": "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
           "operation": "modify",
-          "description": "Add an admin-only helper action (e.g., a button with a clear confirmation) that publishes the provided legal texts by calling the existing save capability for TermsType.customerTerms, TermsType.storeOwnerTerms, and TermsType.privacyPolicy using the constants from frontend/src/legal/providedLegalText.ts; show success/error toasts for the bulk publish operation."
+          "description": "Conditionally hide the Terms checkbox and skip the \"accept terms\" validation when selectedRole is UserRole.superAdmin; ensure Customer and Store Owner still require acceptance before submit; keep all validation/toast messages in English. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-25",
-      "summary": "Add a user-facing Privacy Policy screen that displays stored Privacy Policy text with the same scroll/readability treatment as the existing TermsAcceptancePage and is reachable from all roles via a \"Privacy Policy\" link.",
+      "id": "REQ-42",
+      "summary": "Ensure Super Admin login flow never routes to Terms pages and is not blocked by any Terms acceptance/availability checks.",
       "acceptanceCriteria": [
-        "A new route exists that displays the Privacy Policy content in a scrollable container with preserved whitespace (similar to terms display).",
-        "The Privacy Policy screen handles the \"content missing\" state with a clear English error message.",
-        "Users can navigate to the Privacy Policy screen from within the app UI regardless of role (customer/owner/admin)."
+        "Logging in via the Admin login option always navigates to the Admin dashboard for authenticated users with role Super Admin, without redirecting to any /terms/* routes.",
+        "If a Super Admin user has no acceptedCustomerTerms/acceptedStoreOwnerTerms flags (false), the Admin area is still accessible and unaffected."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
-          "operation": "create",
-          "description": "Create a PrivacyPolicyPage that queries TermsType.privacyPolicy via the existing terms query hook and renders it in a scrollable container with whitespace preserved (matching TermsAcceptancePage treatment); include a clear English message when content is missing."
+          "path": "frontend/src/pages/auth/RoleLoginPage.tsx",
+          "operation": "modify",
+          "description": "Harden post-login redirect logic so an authenticated Super Admin using the Admin login option is routed directly to /admin and never to /terms/*; ensure behavior for customer/store owner remains unchanged. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Register a new route (e.g., /privacy-policy) under the root router that renders the new PrivacyPolicyPage so it is accessible regardless of role."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Add a visible in-app navigation entry or footer link labeled \"Privacy Policy\" that navigates to the new privacy policy route for customer, owner, and admin layouts."
+          "description": "Verify and adjust any route-guard logic so only Customer and Store Owner routes perform Terms checks (useHasAcceptedTerms) and Super Admin navigation never triggers /terms/* redirects; keep admin area accessible regardless of acceptedCustomerTerms/acceptedStoreOwnerTerms values. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-26",
-      "summary": "Extend the Super Admin legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside existing terms editors and ensure React Query cache is refreshed after save.",
+      "id": "REQ-43",
+      "summary": "On customer and store owner Terms pages, render fallback legal text when backend terms content is missing and allow acceptance to proceed without blocking.",
       "acceptanceCriteria": [
-        "Admin Dashboard includes a visible section/tab to manage \"Privacy Policy\" content.",
-        "Privacy Policy editor supports loading current content, editing in a textarea, and saving updates with success/error toasts.",
-        "Saving Privacy Policy invalidates/refetches the relevant React Query cache so the latest content appears immediately after save."
+        "On /terms/customer and /terms/owner, if the backend returns null/empty for terms content, the page displays fallback terms text and the 'Accept and Continue' action can be completed.",
+        "The TermsAcceptancePage does not show a blocking message stating that terms are unavailable in the fallback case."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/TermsManagementPanel.tsx",
+          "path": "frontend/src/pages/terms/TermsAcceptancePage.tsx",
           "operation": "modify",
-          "description": "Add a third tab/section for \"Privacy Policy\" that uses useGetTermsContent(TermsType.privacyPolicy) to load current content into a textarea and uses useSaveTermsContent to save updates; keep toast messaging in English and rely on the existing React Query invalidation in the save hook to refresh the displayed content immediately."
+          "description": "Treat null/empty backend terms as \"missing\" and always display fallback CUSTOMER_TERMS/STORE_OWNER_TERMS; remove any blocking \"terms unavailable\" handling in fallback cases and ensure the accept action is enabled when the checkbox is checked (independent of backend content presence). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/legal/providedLegalText.ts",
+          "operation": "modify",
+          "description": "Confirm the exported fallback terms strings used by TermsAcceptancePage are non-empty and appropriate for display; adjust as needed while keeping all user-facing text in English. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-44",
+      "summary": "Add a public, no-login-required APK download route, served from stable static assets, and link it from the landing experience.",
+      "acceptanceCriteria": [
+        "A public route exists that does not require authentication and includes: (1) a direct download link to the APK file and (2) short install instructions in English.",
+        "The app landing (home) experience includes an obvious link/button to open the APK download page.",
+        "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/assets/primepost.apk",
+          "operation": "create",
+          "description": "Add the APK file to static public assets using a stable filename (primepost.apk) so the download link remains consistent across builds."
+        },
+        {
+          "path": "frontend/src/pages/public/ApkDownloadPage.tsx",
+          "operation": "create",
+          "description": "Create a public React page that provides a direct download link to the stable APK at frontend/public/assets/primepost.apk and includes short, clear installation instructions in English (no auth required). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Register and wire a new public route (no auth guard) to render ApkDownloadPage, and add navigation from the existing landing experience to this route. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-45",
+      "summary": "Update landing screen to show exactly three login options labeled Customer, Store, Admin while keeping existing role routing unchanged.",
+      "acceptanceCriteria": [
+        "The home screen shows exactly three primary login actions labeled in English: 'Customer', 'Store', and 'Admin'.",
+        "Tapping each option routes to the correct existing role login page and then into the correct dashboard based on the user profile role."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update IndexComponent landing UI copy so the three primary login actions are labeled exactly 'Customer', 'Store', and 'Admin' while preserving existing navigation targets (/login/customer, /login/owner, /login/admin); also add an obvious link/button to the APK download page route introduced in REQ-44. Verify the component's usage instructions before implementing."
         }
       ]
     }

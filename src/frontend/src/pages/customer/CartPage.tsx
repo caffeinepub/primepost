@@ -115,8 +115,7 @@ export default function CartPage() {
                 className="w-full"
                 size="lg"
                 onClick={() => {
-                  localStorage.setItem('checkout-store-id', storeId);
-                  navigate({ to: '/customer/checkout' });
+                  navigate({ to: `/customer/checkout/${storeId}` });
                 }}
               >
                 Proceed to Checkout

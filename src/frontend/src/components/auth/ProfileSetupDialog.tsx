@@ -21,6 +21,9 @@ export default function ProfileSetupDialog() {
   const saveMutation = useSaveCallerUserProfile();
   const bootstrapMutation = useBootstrapSuperAdmin();
 
+  // Admin role bypasses terms requirement
+  const requiresTerms = selectedRole !== UserRole.superAdmin;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -29,7 +32,8 @@ export default function ProfileSetupDialog() {
       return;
     }
 
-    if (!acceptedTerms) {
+    // Only validate terms acceptance for Customer and Store Owner roles
+    if (requiresTerms && !acceptedTerms) {
       toast.error('Please accept the Terms and Conditions');
       return;
     }
@@ -150,16 +154,18 @@ export default function ProfileSetupDialog() {
                 </Button>
               </div>
             </div>
-            <div className="flex items-start space-x-2 pt-2">
-              <Checkbox
-                id="terms"
-                checked={acceptedTerms}
-                onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                I accept the Terms and Conditions for using this application
-              </Label>
-            </div>
+            {requiresTerms && (
+              <div className="flex items-start space-x-2 pt-2">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                />
+                <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                  I accept the Terms and Conditions for using this application
+                </Label>
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={saveMutation.isPending || bootstrapMutation.isPending}>
               {saveMutation.isPending || bootstrapMutation.isPending ? 'Creating...' : 'Continue'}
             </Button>

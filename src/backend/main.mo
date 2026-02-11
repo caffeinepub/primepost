@@ -10,9 +10,9 @@ import AccessControl "authorization/access-control";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import Text "mo:core/Text";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -114,6 +114,7 @@ actor {
   let products = Map.empty<ProductId, Product>();
   let orders = List.empty<Order>();
   let reviews = List.empty<Review>();
+
   let termsContent = Map.empty<TermsType, Text>();
 
   var nextOrderId = 0;
@@ -267,11 +268,14 @@ actor {
     };
 
     // Replace [App Name] placeholder with PrimePost
-    let processedContent = content.replace(#text("[App Name]"), "PrimePost");
+    let processedContent = content.replace(#text "[App Name]", "PrimePost");
     termsContent.add(termsType, processedContent);
   };
 
   public query ({ caller }) func getTermsContent(termsType : TermsType) : async ?Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view terms content");
+    };
     termsContent.get(termsType);
   };
 

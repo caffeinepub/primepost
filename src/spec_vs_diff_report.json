@@ -1,52 +1,65 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T09:21:05.034Z",
-  "summary": "Diff adds Privacy Policy support across backend types, a new PrivacyPolicyPage with scrollable display, a footer/navigation link, and extends the admin legal-docs panel to view/edit/save Privacy Policy and publish provided legal texts. However, the added migration appears to discard existing stored legal content, which conflicts with the requested upgrade preservation behavior, and backend API/access-control specifics for Privacy Policy are not evidenced in the provided diff excerpts.",
+  "generatedAt": "2026-02-11T11:23:59.988Z",
+  "summary": "REQ-41, REQ-43, REQ-44 (route/page/link), and REQ-45 appear implemented in the shown diffs. REQ-42 appears implemented via admin bypass routing/guards per RoleLoginPage and App.tsx summaries. The main potentially missing piece is ensuring the actual APK asset exists under frontend public/static assets; the diff only adds a page that links to it.",
   "missing_requirements": [
     {
-      "id": "REQ-23",
-      "requirement": "Backend exposes a query method to fetch Privacy Policy content without requiring a Super Admin role, and a shared save/update method that traps when caller is not a Super Admin; existing Terms APIs continue unchanged.",
-      "reason": "The diff shows new TermsType variants (#privacyPolicy) and types, but the actual backend methods (query fetch + restricted save behavior) are not shown in the truncated backend/main.mo excerpt or elsewhere in the diff summary, so implementation cannot be verified from the provided evidence.",
+      "id": "REQ-44",
+      "requirement": "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds).",
+      "reason": "The new APK download page links to a stable path (/assets/primepost.apk), but the diff does not show the APK file being added under frontend public/static assets (or any static asset manifest change). With only the diff summary, we cannot confirm the asset exists and is served.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-24",
-      "requirement": "Upgrade path preserves existing legal content in stable state unless it is empty/unset (conditional migration policy if schema changes are required).",
-      "reason": "The new migration run() returns an empty termsContent map and does not copy any old stored terms content; this would not preserve existing content during upgrade.",
-      "evidence": [
-        "backend/migration.mo"
+        "frontend/src/pages/public/ApkDownloadPage.tsx (href=\"/assets/primepost.apk\")"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Migration that resets all legal document content to an empty map during upgrade.",
-      "reason": "Not requested; conflicts with REQ-24’s requirement to preserve existing stable content unless empty/unset.",
+      "description": "Shopping cart logic and UI changes (including route parameter handling for checkout/store navigation).",
+      "reason": "Not requested by any of REQ-41..REQ-45; these requirements are about terms/admin bypass, fallback legal text, APK download page, and landing/login copy.",
       "evidence": [
-        "backend/migration.mo"
+        "frontend/src/pages/customer/CartPage.tsx",
+        "frontend-file-summaries.txt (CartPage summary mentions checkout navigation route parameter fix)"
       ]
     },
     {
-      "description": "Admin UI action to 'Publish Provided Legal Docs' with confirmation dialog (bulk overwrite of all legal documents).",
-      "reason": "REQ-24 requires publishing provided text, but does not explicitly request adding a bulk-publish button/flow that overwrites existing content; this is additional behavior beyond the stated requirements.",
+      "description": "Added/expanded money, analytics utilities, and cart Zustand persistence changes.",
+      "reason": "Not requested by REQ-41..REQ-45.",
       "evidence": [
-        "frontend/src/components/admin/TermsManagementPanel.tsx"
+        "frontend/src/utils/money.ts",
+        "frontend/src/utils/analytics.ts",
+        "frontend/src/state/cartStore.ts",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Theme system changes (ThemeProvider/ThemeToggle) and layout updates unrelated to the requested APK/terms/admin behavior (e.g., footer Privacy Policy navigation).",
+      "reason": "Not requested by REQ-41..REQ-45.",
+      "evidence": [
+        "frontend/src/components/theme/ThemeProvider.tsx",
+        "frontend/src/components/theme/ThemeToggle.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "New/updated React Query hook capability for bulk publishing provided legal docs (usePublishProvidedLegalDocs).",
+      "reason": "REQ-43 only asks for frontend fallback rendering when backend terms content is missing; it does not request new bulk publish mutations/hooks.",
+      "evidence": [
+        "frontend-file-summaries.txt (useQueries.ts summary mentions usePublishProvidedLegalDocs mutation)"
       ]
     }
   ],
   "confidence": 0.72,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/admin/TermsManagementPanel.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/legal/providedLegalText.ts",
-    "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
+    "frontend/src/pages/auth/RoleLoginPage.tsx",
+    "frontend/src/pages/customer/CartPage.tsx",
+    "frontend/src/pages/public/ApkDownloadPage.tsx",
+    "frontend/src/pages/terms/TermsAcceptancePage.tsx",
     "project_state.json"
   ]
 }

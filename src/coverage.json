@@ -1,79 +1,92 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T09:21:05.037Z",
+  "generatedAt": "2026-02-11T11:23:59.992Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
-        "id": "REQ-23",
-        "summary": "Extend the backend legal-documents storage to support a Privacy Policy document in addition to existing Customer Terms and Store Owner Terms, with read access for all users and write access restricted to Super Admins.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-24",
-        "summary": "Publish the user-provided legal text in the app by setting the stored content for (1) Customer Terms & Conditions, (2) Store Owner / Service Provider Terms & Conditions, and (3) Privacy Policy exactly as provided by the user, with the placeholder token \"[App Name]\" replaced with \"PrimePost\" wherever it appears.",
+        "id": "REQ-41",
+        "summary": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/legal/providedLegalText.ts",
-          "frontend/src/components/admin/TermsManagementPanel.tsx"
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/legal/providedLegalText.ts",
-          "frontend/src/components/admin/TermsManagementPanel.tsx"
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
         ]
       },
       {
-        "id": "REQ-25",
-        "summary": "Add a user-facing Privacy Policy screen in the frontend that renders the stored Privacy Policy text with the same readability/scrolling treatment used by the existing TermsAcceptancePage, and make it reachable from all roles (Customer, Store Owner/Worker, Super Admin) via an in-app navigation entry or footer link labeled \"Privacy Policy\".",
+        "id": "REQ-42",
+        "summary": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppLayout.tsx"
+          "frontend/src/pages/auth/RoleLoginPage.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppLayout.tsx"
+          "frontend/src/pages/auth/RoleLoginPage.tsx",
+          "frontend/src/App.tsx"
         ]
       },
       {
-        "id": "REQ-26",
-        "summary": "Update the Super Admin dashboard legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside the existing Customer Terms and Store Owner Terms editors.",
+        "id": "REQ-43",
+        "summary": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/TermsManagementPanel.tsx"
+          "frontend/src/pages/terms/TermsAcceptancePage.tsx",
+          "frontend/src/legal/providedLegalText.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/TermsManagementPanel.tsx"
+          "frontend/src/pages/terms/TermsAcceptancePage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-44",
+        "summary": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/public/assets/primepost.apk",
+          "frontend/src/pages/public/ApkDownloadPage.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/public/assets/primepost.apk",
+          "frontend/src/pages/public/ApkDownloadPage.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-45",
+        "summary": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/public/assets/primepost.apk",
     "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/admin/TermsManagementPanel.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/legal/providedLegalText.ts",
-    "frontend/src/pages/terms/PrivacyPolicyPage.tsx",
+    "frontend/src/pages/auth/RoleLoginPage.tsx",
+    "frontend/src/pages/customer/CartPage.tsx",
+    "frontend/src/pages/public/ApkDownloadPage.tsx",
+    "frontend/src/pages/terms/TermsAcceptancePage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

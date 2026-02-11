@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGetTermsContent, useAcceptTerms } from '../../hooks/useQueries';
-import { TermsType, UserRole } from '../../backend';
+import { TermsType } from '../../backend';
 import { toast } from 'sonner';
-import { AlertCircle, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { CUSTOMER_TERMS, STORE_OWNER_TERMS } from '../../legal/providedLegalText';
 
 interface TermsAcceptancePageProps {
   termsType: TermsType;
@@ -18,19 +18,19 @@ interface TermsAcceptancePageProps {
 export default function TermsAcceptancePage({ termsType }: TermsAcceptancePageProps) {
   const navigate = useNavigate();
   const [accepted, setAccepted] = useState(false);
-  const { data: termsContent, isLoading } = useGetTermsContent(termsType);
+  const { data: backendTermsContent, isLoading } = useGetTermsContent(termsType);
   const acceptMutation = useAcceptTerms();
 
   const isCustomerTerms = termsType === TermsType.customerTerms;
   const title = isCustomerTerms ? 'Customer Terms & Conditions' : 'Store Owner Terms & Conditions';
   const redirectPath = isCustomerTerms ? '/customer' : '/owner';
 
-  const handleAccept = async () => {
-    if (!termsContent) {
-      toast.error('Terms content is not available');
-      return;
-    }
+  // Always use fallback if backend content is null or empty
+  const termsContent = (backendTermsContent && backendTermsContent.trim()) 
+    ? backendTermsContent 
+    : (isCustomerTerms ? CUSTOMER_TERMS : STORE_OWNER_TERMS);
 
+  const handleAccept = async () => {
     try {
       await acceptMutation.mutateAsync({ termsType });
       toast.success('Terms accepted successfully!');
@@ -68,38 +68,27 @@ export default function TermsAcceptancePage({ termsType }: TermsAcceptancePagePr
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!termsContent ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Terms and Conditions are not yet available. Please contact the administrator.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-                <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-                  {termsContent}
-                </div>
-              </ScrollArea>
-              <div className="flex items-start space-x-2 pt-2">
-                <Checkbox
-                  id="accept"
-                  checked={accepted}
-                  onCheckedChange={(checked) => setAccepted(checked as boolean)}
-                />
-                <Label htmlFor="accept" className="text-sm leading-relaxed cursor-pointer">
-                  I have read and accept the {title}
-                </Label>
-              </div>
-            </>
-          )}
+          <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+            <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+              {termsContent}
+            </div>
+          </ScrollArea>
+          <div className="flex items-start space-x-2 pt-2">
+            <Checkbox
+              id="accept"
+              checked={accepted}
+              onCheckedChange={(checked) => setAccepted(checked as boolean)}
+            />
+            <Label htmlFor="accept" className="text-sm leading-relaxed cursor-pointer">
+              I have read and accept the {title}
+            </Label>
+          </div>
         </CardContent>
         <CardFooter>
           <Button
             onClick={handleAccept}
             className="w-full"
-            disabled={!accepted || !termsContent || acceptMutation.isPending}
+            disabled={!accepted || acceptMutation.isPending}
           >
             {acceptMutation.isPending ? 'Accepting...' : 'Accept and Continue'}
           </Button>

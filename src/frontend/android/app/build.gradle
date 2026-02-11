@@ -1,0 +1,66 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace 'com.primepost.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.primepost.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.browser:browser:1.7.0'
+}
+
+// Task to copy web build to Android assets
+task copyWebAssets(type: Copy) {
+    description = 'Copies the built web app into Android assets'
+    from '../../dist'
+    into 'src/main/assets/www'
+    
+    doFirst {
+        delete 'src/main/assets/www'
+    }
+}
+
+// Make assembleDebug depend on copyWebAssets
+tasks.named('preBuild') {
+    dependsOn copyWebAssets
+}

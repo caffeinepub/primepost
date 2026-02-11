@@ -1,96 +1,105 @@
 {
   "kind": "build_request",
-  "title": "Add PrimePost Privacy Policy and publish provided Terms & Conditions text",
-  "priority": "normal",
+  "title": "Bypass Terms for Admin, ensure Terms availability, and expose public APK download with 3-role login landing",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-23",
-      "text": "Extend the backend legal-documents storage to support a Privacy Policy document in addition to existing Customer Terms and Store Owner Terms, with read access for all users and write access restricted to Super Admins.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "Please put the terms and conditions and privacy policy. Here there are."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes a query method to fetch Privacy Policy content without requiring a Super Admin role.",
-        "Backend exposes a shared method to save/update Privacy Policy content that traps when caller is not a Super Admin.",
-        "Existing Terms & Conditions APIs (getTermsContent/saveTermsContent/acceptTerms/hasAcceptedTerms) continue to work unchanged."
-      ]
-    },
-    {
-      "id": "REQ-24",
-      "text": "Publish the user-provided legal text in the app by setting the stored content for (1) Customer Terms & Conditions, (2) Store Owner / Service Provider Terms & Conditions, and (3) Privacy Policy exactly as provided by the user, with the placeholder token \"[App Name]\" replaced with \"PrimePost\" wherever it appears.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "App name: PrimePost",
-          "📄 CUSTOMER TERMS AND CONDITIONS",
-          "📄 STORE OWNER / SERVICE PROVIDER TERMS AND CONDITIONS",
-          "📄 PRIVACY POLICY"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Customer Terms content shown in the app matches the provided text, including \"Effective Date: 15 April 2026\" and \"Platform: PrimePost\", and does not contain \"[App Name]\".",
-        "Store Owner / Service Provider Terms content shown in the app matches the provided text and does not contain \"[App Name]\" (leave \"Effective Date: [Insert Date]\" as-is unless the user supplies a date).",
-        "Privacy Policy content shown in the app matches the provided text, including \"Operated by: WeMove All\", \"Country: Cameroon\", and \"PrimePost7@gmail.com\".",
-        "If the canister already has existing legal content in stable state, the upgrade path preserves existing content unless it is empty/unset (use conditional migration policy if schema changes are required)."
-      ]
-    },
-    {
-      "id": "REQ-25",
-      "text": "Add a user-facing Privacy Policy screen in the frontend that renders the stored Privacy Policy text with the same readability/scrolling treatment used by the existing TermsAcceptancePage, and make it reachable from all roles (Customer, Store Owner/Worker, Super Admin) via an in-app navigation entry or footer link labeled \"Privacy Policy\".",
+      "id": "REQ-41",
+      "text": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-2"
         ],
         "quotes": [
-          "Also add privacy policy. Here they are 📄 PRIVACY POLICY"
+          "Armin don't need terms and conditions."
         ]
       },
       "acceptanceCriteria": [
-        "A new route exists that displays the Privacy Policy content in a scrollable container with preserved whitespace (similar to terms display).",
-        "The Privacy Policy screen handles the \"content missing\" state with a clear English error message.",
-        "Users can navigate to the Privacy Policy screen from within the app UI regardless of role (customer/owner/admin)."
+        "When the user selects the Admin role during profile setup, the UI does not show a Terms & Conditions acceptance checkbox and does not block profile creation due to Terms not being accepted.",
+        "When the user selects Customer or Store Owner roles during profile setup, the Terms & Conditions acceptance checkbox is still required before continuing.",
+        "All user-facing text for validation/errors remains in English."
       ]
     },
     {
-      "id": "REQ-26",
-      "text": "Update the Super Admin dashboard legal-documents management UI to include a Privacy Policy editor (view/edit/save) alongside the existing Customer Terms and Store Owner Terms editors.",
+      "id": "REQ-42",
+      "text": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-2"
         ],
         "quotes": [
-          "Please put the terms and conditions and privacy policy. Here there are."
+          "To login as admin, where the terms and conditions is saying that it's not available."
         ]
       },
       "acceptanceCriteria": [
-        "Admin Dashboard includes a visible section/tab to manage \"Privacy Policy\" content.",
-        "Privacy Policy editor supports loading current content, editing in a textarea, and saving updates with success/error toasts.",
-        "Saving Privacy Policy invalidates/refetches the relevant React Query cache so the latest content appears immediately after save."
+        "Logging in via the Admin login option always navigates to the Admin dashboard for authenticated users with role Super Admin, without redirecting to any /terms/* routes.",
+        "If a Super Admin user has no acceptedCustomerTerms/acceptedStoreOwnerTerms flags (false), the Admin area is still accessible and unaffected."
+      ]
+    },
+    {
+      "id": "REQ-43",
+      "text": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "terms and conditions is saying that it's not available"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On /terms/customer and /terms/owner, if the backend returns null/empty for terms content, the page displays fallback terms text and the 'Accept and Continue' action can be completed.",
+        "The TermsAcceptancePage does not show a blocking message stating that terms are unavailable in the fallback case."
+      ]
+    },
+    {
+      "id": "REQ-44",
+      "text": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "Please also make the APK downloadable"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A public route exists that does not require authentication and includes: (1) a direct download link to the APK file and (2) short install instructions in English.",
+        "The app landing (home) experience includes an obvious link/button to open the APK download page.",
+        "The APK download link points to a stable filename under frontend static public assets (so the link does not change between builds)."
+      ]
+    },
+    {
+      "id": "REQ-45",
+      "text": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "one app has 3 login options. Option 1 is to login as customer, option is to login as store , and option 3 is to login as admin"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The home screen shows exactly three primary login actions labeled in English: 'Customer', 'Store', and 'Admin'.",
+        "Tapping each option routes to the correct existing role login page and then into the correct dashboard based on the user profile role."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; add backend logic there.",
-    "Create backend/migration.mo only if required by stable-state changes (conditional migration policy).",
-    "Do not edit files under frontend/src/components/ui (read-only UI components must be composed, not modified).",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx (immutable paths).",
+    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
+    "Backend must remain a single Motoko actor in backend/main.mo; add migration.mo only if a state upgrade is required.",
     "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Do not add third-party legal document hosting or external CMS integrations.",
-    "Do not implement mandatory Privacy Policy acceptance gating unless explicitly requested by the user.",
-    "Do not change existing role-based access control behavior beyond what is required to view/edit legal documents."
+    "Implementing new authentication providers beyond Internet Identity.",
+    "Changing role definitions or adding additional roles beyond Customer, Store Owner/Worker, and Super Admin.",
+    "Producing a signed release APK (this request is limited to making an APK downloadable via the web app with a stable filename)."
   ],
   "imageRequirements": {
     "required": [],

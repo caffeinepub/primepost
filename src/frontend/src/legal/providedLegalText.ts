@@ -161,7 +161,7 @@ We may update these terms at any time. Continued use of the app means you accept
 
 export const STORE_OWNER_TERMS = `📄 STORE OWNER / SERVICE PROVIDER TERMS AND CONDITIONS
 
-Effective Date: [Insert Date]
+Effective Date: 15 April 2026
 Platform: PrimePost
 
 

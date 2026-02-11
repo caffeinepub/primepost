@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useGetTermsContent, useSaveTermsContent } from '../../hooks/useQueries';
+import { useGetTermsContent, useSaveTermsContent, usePublishProvidedLegalDocs } from '../../hooks/useQueries';
 import { TermsType } from '../../backend';
 import { toast } from 'sonner';
 import { FileText, Save, Upload } from 'lucide-react';
@@ -26,10 +26,12 @@ export default function TermsManagementPanel() {
   const { data: ownerTerms, isLoading: loadingOwner } = useGetTermsContent(TermsType.storeOwnerTerms);
   const { data: privacyPolicy, isLoading: loadingPrivacy } = useGetTermsContent(TermsType.privacyPolicy);
   const saveMutation = useSaveTermsContent();
+  const publishMutation = usePublishProvidedLegalDocs();
 
   const [customerContent, setCustomerContent] = useState('');
   const [ownerContent, setOwnerContent] = useState('');
   const [privacyContent, setPrivacyContent] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   React.useEffect(() => {
     if (customerTerms) setCustomerContent(customerTerms);
@@ -53,18 +55,32 @@ export default function TermsManagementPanel() {
       await saveMutation.mutateAsync({ termsType, content: content.trim() });
       toast.success('Content saved successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to save content');
+      const errorMessage = error.message || 'Failed to save content';
+      if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only super admins')) {
+        toast.error('Authorization failed: Only super admins can save terms content');
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
   const handlePublishProvidedLegal = async () => {
     try {
-      await saveMutation.mutateAsync({ termsType: TermsType.customerTerms, content: CUSTOMER_TERMS });
-      await saveMutation.mutateAsync({ termsType: TermsType.storeOwnerTerms, content: STORE_OWNER_TERMS });
-      await saveMutation.mutateAsync({ termsType: TermsType.privacyPolicy, content: PRIVACY_POLICY });
+      await publishMutation.mutateAsync({
+        customerTerms: CUSTOMER_TERMS,
+        storeOwnerTerms: STORE_OWNER_TERMS,
+        privacyPolicy: PRIVACY_POLICY,
+      });
       toast.success('All legal documents published successfully!');
+      setDialogOpen(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to publish legal documents');
+      const errorMessage = error.message || 'Failed to publish legal documents';
+      if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only super admins')) {
+        toast.error('Authorization failed: Only super admins can publish legal documents');
+      } else {
+        toast.error(errorMessage);
+      }
+      setDialogOpen(false);
     }
   };
 
@@ -83,11 +99,11 @@ export default function TermsManagementPanel() {
               </p>
             </div>
           </div>
-          <AlertDialog>
+          <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled={publishMutation.isPending}>
                 <Upload className="w-4 h-4 mr-2" />
-                Publish Provided Legal Docs
+                {publishMutation.isPending ? 'Publishing...' : 'Publish Provided Legal Docs'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -99,9 +115,12 @@ export default function TermsManagementPanel() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePublishProvidedLegal}>
-                  Publish All
+                <AlertDialogCancel disabled={publishMutation.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handlePublishProvidedLegal}
+                  disabled={publishMutation.isPending}
+                >
+                  {publishMutation.isPending ? 'Publishing...' : 'Publish All'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

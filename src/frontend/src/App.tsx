@@ -27,10 +27,12 @@ import BiometricEnablementDialog from './components/auth/BiometricEnablementDial
 import UnlockDialog from './components/auth/UnlockDialog';
 import TermsAcceptancePage from './pages/terms/TermsAcceptancePage';
 import PrivacyPolicyPage from './pages/terms/PrivacyPolicyPage';
+import ApkDownloadPage from './pages/public/ApkDownloadPage';
 import { UserRole, TermsType } from './backend';
 import { useLocalPin } from './hooks/useLocalPin';
 import { useBiometricAuth } from './hooks/useBiometricAuth';
 import React from 'react';
+import { Download } from 'lucide-react';
 
 function RootComponent() {
   const { identity } = useInternetIdentity();
@@ -43,6 +45,7 @@ function RootComponent() {
   const isAuthenticated = !!identity;
   const pinIsSet = isPinSet();
 
+  // Reactive conditions that update immediately when state changes
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && profile === null;
   const showPinSetup = isAuthenticated && !profileLoading && profile !== null && !pinIsSet;
   const showUnlock = isAuthenticated && !profileLoading && profile !== null && pinIsSet && !isUnlocked;
@@ -101,19 +104,37 @@ function IndexComponent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <div className="text-center space-y-8 p-8">
+      <div className="text-center space-y-8 p-8 max-w-2xl">
         <img src="/assets/generated/primepost-logo.dim_512x512.png" alt="PrimePost" className="w-32 h-32 mx-auto" />
         <h1 className="text-4xl font-bold">Welcome to PrimePost</h1>
         <p className="text-muted-foreground text-lg">Choose your role to continue</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button onClick={() => navigate({ to: '/login/customer' })} className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition">
+          <button 
+            onClick={() => navigate({ to: '/login/customer' })} 
+            className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition"
+          >
             Customer
           </button>
-          <button onClick={() => navigate({ to: '/login/owner' })} className="px-8 py-4 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition">
-            Store Owner
+          <button 
+            onClick={() => navigate({ to: '/login/owner' })} 
+            className="px-8 py-4 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition"
+          >
+            Store
           </button>
-          <button onClick={() => navigate({ to: '/login/admin' })} className="px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition">
+          <button 
+            onClick={() => navigate({ to: '/login/admin' })} 
+            className="px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition"
+          >
             Admin
+          </button>
+        </div>
+        <div className="pt-6">
+          <button
+            onClick={() => navigate({ to: '/download' })}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-lg font-medium hover:opacity-90 transition shadow-lg"
+          >
+            <Download className="w-5 h-5" />
+            Download Android App
           </button>
         </div>
       </div>
@@ -155,6 +176,12 @@ const loginAdminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login/admin',
   component: LoginAdminComponent
+});
+
+const apkDownloadRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/download',
+  component: ApkDownloadPage
 });
 
 function CustomerRouteComponent() {
@@ -221,7 +248,7 @@ const cartRoute = createRoute({
 
 const checkoutRoute = createRoute({
   getParentRoute: () => customerRoute,
-  path: '/checkout',
+  path: '/checkout/$storeId',
   component: CheckoutPage
 });
 
@@ -308,6 +335,7 @@ const ordersManagementRoute = createRoute({
 function AdminRouteComponent() {
   const { data: profile } = useGetCallerUserProfile();
 
+  // Super Admin bypasses all terms checks
   if (profile && profile.role !== UserRole.superAdmin) {
     return <AccessDeniedScreen />;
   }
@@ -353,7 +381,7 @@ const termsOwnerRoute = createRoute({
 
 const privacyPolicyRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/privacy-policy',
+  path: '/privacy',
   component: PrivacyPolicyPage
 });
 
@@ -362,6 +390,7 @@ const routeTree = rootRoute.addChildren([
   loginCustomerRoute,
   loginOwnerRoute,
   loginAdminRoute,
+  apkDownloadRoute,
   customerRoute.addChildren([
     customerDashboardRoute,
     storeAccessRoute,
@@ -371,21 +400,21 @@ const routeTree = rootRoute.addChildren([
     checkoutRoute,
     ordersRoute,
     orderDetailRoute,
-    marketplaceRoute,
+    marketplaceRoute
   ]),
   ownerRoute.addChildren([
     ownerDashboardRoute,
     storeRegistrationRoute,
     storeSettingsRoute,
     inventoryRoute,
-    ordersManagementRoute,
+    ordersManagementRoute
   ]),
   adminRoute.addChildren([
-    adminDashboardRoute,
+    adminDashboardRoute
   ]),
   termsCustomerRoute,
   termsOwnerRoute,
-  privacyPolicyRoute,
+  privacyPolicyRoute
 ]);
 
 const router = createRouter({ routeTree });

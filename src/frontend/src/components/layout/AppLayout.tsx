@@ -115,7 +115,7 @@ export default function AppLayout({ children, role }: AppLayoutProps) {
               </a>
             </p>
             <button
-              onClick={() => navigate({ to: '/privacy-policy' })}
+              onClick={() => navigate({ to: '/privacy' })}
               className="flex items-center gap-1 hover:text-foreground transition"
             >
               <Shield className="h-3 w-3" />

@@ -9,25 +9,38 @@ export default function PinSetupDialog() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [step, setStep] = useState<'setup' | 'confirm'>('setup');
+  const [error, setError] = useState<string | null>(null);
   const { setPin: savePin } = useLocalPin();
 
   const handleSetupComplete = () => {
     if (pin.length !== 4) {
-      toast.error('PIN must be 4 digits');
+      const errorMsg = 'PIN must be 4 digits';
+      toast.error(errorMsg);
+      setError(errorMsg);
       return;
     }
+    setError(null);
     setStep('confirm');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (confirmPin !== pin) {
-      toast.error('PINs do not match');
+      const errorMsg = 'PINs do not match. Please try again.';
+      toast.error(errorMsg);
+      setError(errorMsg);
       setConfirmPin('');
       return;
     }
 
-    savePin(pin);
-    toast.success('PIN set successfully!');
+    try {
+      setError(null);
+      savePin(pin);
+      toast.success('PIN set successfully!');
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to save PIN. Please try again.';
+      toast.error(errorMsg);
+      setError(errorMsg);
+    }
   };
 
   return (
@@ -43,6 +56,12 @@ export default function PinSetupDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              {error}
+            </div>
+          )}
+          
           <div className="flex justify-center">
             <InputOTP
               maxLength={4}

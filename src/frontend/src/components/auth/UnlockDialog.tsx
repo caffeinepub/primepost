@@ -11,6 +11,7 @@ export default function UnlockDialog() {
   const [pin, setPin] = useState('');
   const [showPinInput, setShowPinInput] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { verifyPin, unlock } = useLocalPin();
   const { canUseBiometrics, isBiometricsEnabled, verifyBiometrics, isProcessing } = useBiometricAuth();
 
@@ -18,43 +19,65 @@ export default function UnlockDialog() {
     if (isAuthenticating || isProcessing) return;
     
     setIsAuthenticating(true);
+    setError(null);
+    
     try {
       await verifyBiometrics();
       unlock();
       toast.success('Unlocked successfully!');
     } catch (error: any) {
-      if (error.message.includes('cancelled')) {
+      const errorMessage = error.message || 'Biometric authentication failed';
+      
+      if (errorMessage.includes('cancelled')) {
         toast.info('Authentication cancelled');
+        setError('Authentication was cancelled. Please try again or use your PIN.');
       } else {
         toast.error('Biometric authentication failed');
+        setError(errorMessage);
       }
+      
       setShowPinInput(true);
     } finally {
       setIsAuthenticating(false);
     }
   };
 
-  const handlePinUnlock = () => {
+  const handlePinUnlock = async () => {
     if (pin.length !== 4) {
       toast.error('PIN must be 4 digits');
       return;
     }
 
-    if (verifyPin(pin)) {
-      unlock();
-      toast.success('Unlocked successfully!');
-    } else {
-      toast.error('Incorrect PIN');
+    setError(null);
+
+    try {
+      if (verifyPin(pin)) {
+        unlock();
+        toast.success('Unlocked successfully!');
+      } else {
+        const errorMsg = 'Incorrect PIN. Please try again.';
+        toast.error(errorMsg);
+        setError(errorMsg);
+        setPin('');
+      }
+    } catch (error: any) {
+      const errorMsg = error.message || 'Failed to unlock. Please try again.';
+      toast.error(errorMsg);
+      setError(errorMsg);
       setPin('');
     }
   };
 
   useEffect(() => {
     const tryBiometric = async () => {
-      const canUse = await canUseBiometrics();
-      if (canUse && isBiometricsEnabled() && !showPinInput) {
-        handleBiometricUnlock();
-      } else {
+      try {
+        const canUse = await canUseBiometrics();
+        if (canUse && isBiometricsEnabled() && !showPinInput) {
+          await handleBiometricUnlock();
+        } else {
+          setShowPinInput(true);
+        }
+      } catch (error) {
         setShowPinInput(true);
       }
     };
@@ -77,6 +100,12 @@ export default function UnlockDialog() {
               <Lock className="w-10 h-10 text-primary" />
             </div>
           </div>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              {error}
+            </div>
+          )}
 
           {showPinInput && (
             <>

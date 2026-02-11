@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 19,
   "summary": "PrimePost: a multi-vendor POS platform with Customer + Store Owner/Worker mobile apps and a Super Admin web dashboard, including first-time user onboarding, PIN/biometric-based login, and admin-managed legal documents (Terms & Conditions + Privacy Policy) presented in-app.",
   "architectural_notes": [
     "Project name: PrimePost.",
@@ -15,9 +15,13 @@
     "Biometric/WebAuthn prompts must be non-blocking: always allow Skip, handle cancel/failure/success by closing the modal and continuing the flow; apply consistently across all app roles (Customer, Owner/Worker, Admin)."
   ],
   "known_issues": [
-    "Login/onboarding can get stuck on the biometric enablement popup: Skip button non-responsive and fingerprint prompt completion does not advance; reported across Customer, Owner/Worker, and Admin experiences (notably on Android/WebAuthn)."
+    "Login/onboarding can get stuck on the biometric enablement popup: Skip button non-responsive and fingerprint prompt completion does not advance; reported across Customer, Owner/Worker, and Admin experiences (notably on Android/WebAuthn).",
+    "Regression/bug: login flow stops after entering password (does not continue) across all roles (Store Owner/Worker, Admin, Customer) and persists across different browsers; users cannot access any app area.",
+    "Customer Terms & Conditions acceptance screen reports \"Terms and Conditions are not yet available\" even though Terms & Conditions text was provided and expected to be published/available.",
+    "Production launch/deployment failed with a deployment error (needs investigation to restore production deployment pipeline).",
+    "Admin login flow is incorrectly blocked by Terms & Conditions availability/acceptance (shows \"Terms and Conditions is not available\" for Admin, but Admin should not need T&C)."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-implement-role-based-accounts-and-access-control-with-three-roles-customer-store-owner-worker-super-admin-each-having-a-separate-login-entry-and-dashboard-authentication-must-use-internet-identity-and-role-assignment-must-be-enforced-for-all-protected-pages-and-backend-methods",
@@ -194,6 +198,150 @@
         "REQ-26"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-the-pin-unlock-flow-so-that-after-a-successful-pin-entry-or-successful-biometric-verification-the-app-reliably-advances-past-the-unlock-primepost-dialog-and-allows-navigation-to-the-selected-role-dashboard-customer-store-owner-worker-super-admin-in-the-same-browser-tab-session",
+      "title": "Fix the PIN unlock flow so that after a successful PIN entry (or successful biometric verification), the app reliably advances past the “Unlock PrimePost” dialog and allows navigation to the selected role dashboard (Customer, Store Owner/Worker, Super Admin) in the same browser tab/session.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-local-pin-state-changes-reactive-across-multiple-hook-instances-within-the-same-tab-e-g-rootcomponent-and-unlockdialog-pinsetupdialog-so-that-calling-setpin-unlock-lock-updates-all-consumers-without-requiring-a-page-refresh-and-without-relying-solely-on-the-browser-storage-event",
+      "title": "Make local PIN state changes reactive across multiple hook instances within the same tab (e.g., RootComponent and UnlockDialog/PinSetupDialog), so that calling setPin()/unlock()/lock() updates all consumers without requiring a page refresh and without relying solely on the browser 'storage' event.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-user-facing-error-handling-for-unlock-failures-so-users-are-never-left-in-a-silent-blocked-state-if-unlock-state-cannot-be-persisted-e-g-storage-unavailable-or-an-unexpected-error-occurs-during-unlock-show-a-clear-toast-error-message-in-english-and-keep-pin-input-available-for-retry",
+      "title": "Add user-facing error handling for unlock failures so users are never left in a silent blocked state: if unlock state cannot be persisted (e.g., storage unavailable) or an unexpected error occurs during unlock, show a clear toast/error message in English and keep PIN input available for retry.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-customer-terms-conditions-and-store-owner-service-provider-terms-conditions-are-available-to-all-authenticated-users-customers-and-store-owners-so-the-termsacceptancepage-never-shows-the-blocking-message-terms-and-conditions-are-not-yet-available-please-contact-the-administrator-when-the-provided-legal-text-is-expected-to-be-live",
+      "title": "Ensure Customer Terms & Conditions and Store Owner / Service Provider Terms & Conditions are available to all authenticated users (customers and store owners) so the TermsAcceptancePage never shows the blocking message \"Terms and Conditions are not yet available. Please contact the administrator.\" when the provided legal text is expected to be live.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-super-admin-publish-provided-legal-docs-action-reliably-publish-the-provided-legal-documents-to-the-backend-and-immediately-reflect-as-available-in-the-customer-owner-terms-acceptance-screens-no-page-refresh-required",
+      "title": "Make the Super Admin \"Publish Provided Legal Docs\" action reliably publish the provided legal documents to the backend and immediately reflect as available in the Customer/Owner terms acceptance screens (no page refresh required).",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-android-app-wrapper-for-primepost-that-can-be-built-into-an-installable-apk-using-the-existing-react-frontend-build-output-as-the-embedded-web-app",
+      "title": "Add an Android app wrapper for PrimePost that can be built into an installable APK, using the existing React frontend build output as the embedded web app.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-and-document-a-repeatable-local-build-process-for-generating-the-android-apk-including-prerequisites-commands-and-where-the-apk-output-is-located",
+      "title": "Create and document a repeatable local build process for generating the Android APK, including prerequisites, commands, and where the APK output is located.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-required-android-app-metadata-and-assets-so-the-apk-has-correct-app-naming-and-icons-for-primepost",
+      "title": "Add required Android app metadata and assets so the APK has correct app naming and icons for PrimePost.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-internet-identity-login-flows-work-when-primepost-is-running-inside-the-android-wrapper-external-browser-custom-tab-as-needed-and-the-app-returns-to-primepost-after-authentication-without-leaving-the-user-stuck",
+      "title": "Ensure Internet Identity login flows work when PrimePost is running inside the Android wrapper (external browser/custom tab as needed), and the app returns to PrimePost after authentication without leaving the user stuck.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-public-no-login-required-web-page-that-provides-a-direct-download-link-for-the-latest-primepost-android-apk-plus-short-install-instructions-in-english",
+      "title": "Add a public (no login required) web page that provides a direct download link for the latest PrimePost Android APK, plus short install instructions in English.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-package-the-built-android-debug-apk-into-the-frontend-s-static-public-assets-under-a-stable-filename-so-the-download-page-can-link-to-it-consistently",
+      "title": "Package the built Android debug APK into the frontend’s static public assets under a stable filename so the download page can link to it consistently.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-expose-the-apk-download-page-from-the-app-landing-experience-so-users-can-easily-find-the-apk-link-without-needing-developer-instructions",
+      "title": "Expose the APK download page from the app landing experience so users can easily find the APK link without needing developer instructions.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-existing-android-apk-build-documentation-to-include-the-exact-url-path-users-should-open-to-download-the-apk-from-the-deployed-web-app-and-the-stable-apk-filename-used",
+      "title": "Update the existing Android APK build documentation to include the exact URL path users should open to download the APK from the deployed web app, and the stable APK filename used.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-first-time-profile-onboarding-profilesetupdialog-so-that-selecting-the-admin-super-admin-role-does-not-require-accepting-terms-conditions-and-does-not-show-a-terms-acceptance-checkbox-for-admin",
+      "title": "Update the first-time profile onboarding (ProfileSetupDialog) so that selecting the Admin (Super Admin) role does NOT require accepting Terms & Conditions and does NOT show a Terms acceptance checkbox for Admin.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-super-admin-users-are-never-routed-to-termsacceptancepage-and-are-never-blocked-by-terms-availability-acceptance-checks-anywhere-in-the-admin-login-navigation-flow",
+      "title": "Ensure Super Admin users are never routed to TermsAcceptancePage and are never blocked by Terms availability/acceptance checks anywhere in the admin login + navigation flow.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-customer-and-store-owner-terms-screens-never-block-users-with-a-terms-and-conditions-are-not-yet-available-state-when-backend-terms-content-is-missing-render-the-provided-fallback-legal-text-and-allow-acceptance-to-proceed",
+      "title": "Ensure Customer and Store Owner Terms screens never block users with a “Terms and Conditions are not yet available” state; when backend terms content is missing, render the provided fallback legal text and allow acceptance to proceed.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-or-verify-and-wire-up-a-public-no-login-required-apk-download-page-route-in-the-react-app-and-link-to-it-from-the-landing-experience-so-users-can-download-the-apk-without-developer-instructions",
+      "title": "Add (or verify and wire up) a public, no-login-required APK download page route in the React app, and link to it from the landing experience so users can download the APK without developer instructions.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-landing-screen-copy-so-the-three-login-options-are-explicitly-customer-store-admin-matching-the-user-s-requested-wording-while-keeping-role-routing-behavior-unchanged-customer-login-customer-store-login-owner-admin-login-admin",
+      "title": "Update the landing screen copy so the three login options are explicitly: Customer, Store, Admin (matching the user’s requested wording), while keeping role routing behavior unchanged (Customer -> /login/customer, Store -> /login/owner, Admin -> /login/admin).",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -341,6 +489,32 @@
       "reqIds": [
         "REQ-23"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Seed the backend legal-document storage with the provided Customer Terms & Conditions and Store Owner / Service Provider Terms & Conditions so they exist by default after deployment/upgrade (without requiring a Super Admin to manually publish them first). The stored content must match the user-provided text, with any \"[App Name]\" placeholders replaced with \"PrimePost\".",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Produce an installable Android build (APK) for PrimePost (package the current app for Android distribution/install)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-34",
+      "summary": "Update auth/onboarding so Super Admin login is not gated by Terms & Conditions acceptance/availability (admin should bypass TermsAcceptance entirely)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-35",
+      "summary": "Provide a single app landing screen with 3 login options (Customer / Store Owner-Worker / Admin) and make the Android APK publicly downloadable",
+      "reqIds": [],
       "status": "pending"
     }
   ],
