@@ -1,205 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "PrimePost: secure, scalable, mobile-only (Android/iOS) multi-vendor POS + marketplace app built in Flutter with full English/French bilingual support, role-based access (Customer/Store Owner/Super Admin), sequential 5-digit user IDs, PIN/password security, real-time order updates, push notifications, and cloud backend (e.g., Firebase).",
-  "architectural_notes": [
-    "Mobile-only scope: no web dashboard/platform.",
-    "Tech stack requirement: Flutter app supporting both Android and iOS.",
-    "Full bilingual localization (English/French) with in-app language switch.",
-    "Backend should be scalable cloud (e.g., Firebase) with role-based access control and strict separation between Customer/Owner/Admin.",
-    "Unique ID generation must be sequential 5-digit numeric (00001, 00002, ...) for Customers and Store Owners; must prevent duplicates and disallow edits.",
-    "Security: hash/encrypt sensitive credentials (PIN/password); protect user data.",
-    "Real-time updates required for order status synchronization between owner and customer.",
-    "Push notifications required for order events and owner/customer alerts."
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Runtime error: \"useLanguage must be used within a LanguageProvider\" (hook used outside provider context)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-the-app-has-exactly-three-role-login-entry-points-on-the-main-screen-customer-store-owner-and-super-admin-with-no-other-login-types-visible-anywhere-in-the-ui",
-      "title": "Ensure the app has exactly three role login entry points on the main screen: Customer, Store Owner, and Super Admin, with no other login types visible anywhere in the UI.",
+      "id": "feature-ensure-the-react-component-tree-is-wrapped-in-languageprovider-so-any-call-to-uselanguage-e-g-in-frontend-src-app-tsx-and-frontend-src-components-layout-applayout-tsx-is-always-within-provider-context-eliminating-the-runtime-error-uselanguage-must-be-used-within-a-languageprovider",
+      "title": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    },
-    {
-      "id": "feature-implement-full-bilingual-english-french-ui-support-across-the-application-including-an-in-app-language-switch-in-settings-profile-and-apply-translations-consistently-to-all-customer-owner-and-admin-screens",
-      "title": "Implement full bilingual (English/French) UI support across the application, including an in-app language switch in Settings/Profile, and apply translations consistently to all customer, owner, and admin screens.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-sequential-unique-non-editable-5-digit-numeric-id-for-every-customer-and-store-owner-00001-00002-generated-automatically-on-first-registration-stored-in-backend-state-and-displayed-in-the-user-profile-ui",
-      "title": "Add a sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-enforce-mandatory-acceptance-of-both-terms-conditions-and-privacy-policy-before-a-customer-or-store-owner-can-complete-account-creation-with-super-admin-excluded-from-this-requirement",
-      "title": "Enforce mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation, with Super Admin excluded from this requirement.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-secure-pin-based-account-security-for-customers-and-store-owners-require-a-4-digit-pin-on-first-registration-store-only-a-hashed-form-use-it-for-future-in-app-unlock-login-gating-and-allow-pin-changes-from-profile-settings",
-      "title": "Implement secure PIN-based account security for Customers and Store Owners: require a 4-digit PIN on first registration, store only a hashed form, use it for future in-app unlock/login gating, and allow PIN changes from profile/settings.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-super-admin-first-login-password-setup-allow-first-login-without-an-existing-password-then-force-the-super-admin-to-create-a-password-after-first-login-and-require-that-password-for-future-admin-unlock-login-operations-within-the-app-session",
-      "title": "Implement Super Admin first-login password setup: allow first login without an existing password, then force the Super Admin to create a password after first login, and require that password for future admin unlock/login operations within the app session.",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-profile-management-for-customers-and-store-owners-to-update-mobile-number-email-address-optional-profile-photo-change-pin-and-switch-language-while-preventing-modification-of-the-assigned-5-digit-user-id",
-      "title": "Add profile management for Customers and Store Owners to update mobile number, email address, optional profile photo, change PIN, and switch language, while preventing modification of the assigned 5-digit user ID.",
-      "reqIds": [
-        "REQ-7"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-support-customer-store-discovery-and-access-by-a-entering-store-id-b-searching-by-store-name-c-filtering-by-category-and-d-near-location-filtering-using-device-geolocation-gps-based-when-permission-is-granted",
-      "title": "Support customer store discovery and access by (a) entering Store ID, (b) searching by store name, (c) filtering by category, and (d) “near location” filtering using device geolocation (GPS-based) when permission is granted.",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-marketplace-functionality-store-owners-can-publish-promotional-discounted-items-and-special-offers-customers-can-browse-marketplace-search-items-by-name-filter-by-nearest-location-and-view-discounted-items",
-      "title": "Implement Marketplace functionality: Store Owners can publish promotional/discounted items and special offers; Customers can browse Marketplace, search items by name, filter by nearest location, and view discounted items.",
-      "reqIds": [
-        "REQ-13"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-expand-super-admin-capabilities-inside-the-mobile-app-to-view-all-customers-and-store-owners-monitor-transactions-orders-suspend-block-users-view-an-analytics-summary-and-manage-system-settings",
-      "title": "Expand Super Admin capabilities inside the mobile app to: view all customers and store owners, monitor transactions/orders, suspend/block users, view an analytics summary, and manage system settings.",
-      "reqIds": [
-        "REQ-14"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-apply-a-cohesive-mobile-first-visual-theme-for-primepost-across-all-screens-customer-owner-admin-including-typography-spacing-and-component-styling-and-keep-it-consistent-in-both-light-and-dark-modes",
-      "title": "Apply a cohesive, mobile-first visual theme for PrimePost across all screens (Customer/Owner/Admin), including typography, spacing, and component styling, and keep it consistent in both light and dark modes.",
-      "reqIds": [
-        "REQ-15"
-      ],
-      "version": 1
     }
   ],
-  "new_feature_requests": [
-    {
-      "id": "AR-1",
-      "summary": "Mobile-only Flutter app (Android & iOS) with full bilingual (English/French) UI and in-app language switch",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Role-based authentication with exactly three login options (Customer, Store Owner, Super Admin) and T&C/Privacy checkbox gating Customer/Owner signup",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Sequential non-editable unique 5-digit numeric IDs for Customers and Store Owners, shown in profile, no duplicates",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Security flows: Customer/Owner create 4-digit PIN at registration (hashed), login via PIN, change PIN; Super Admin forced to set password after first login",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Profile management for Customer/Owner: update phone, email, optional photo, change PIN, switch language; cannot change 5-digit ID",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Customer shopping flow: access store via Store ID; search stores (name/category/GPS); browse items (price/image/availability); basket with quantity controls; checkout with table #, instructions, payment (cash/mobile money) and show store MoMo number",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Real-time order tracking with statuses (Pending/In Progress/On The Way/Completed) and push notifications; status changes driven by store owner actions",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Store Owner features: register store, manage store details and Mobile Money number; CRUD products with images/prices/stock; low-stock alerts; out-of-stock; order management with notifications and status updates",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Marketplace feature: store owners publish promos/discounts/offers; customers browse/search items and filter by nearest location",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "In-app Super Admin module (no web): view customers/owners, monitor transactions, suspend/block users, analytics summary, manage system settings",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-19",
-      "summary": "Ensure checkout supports: basket review, optional table number, special instructions, payment method selection (Cash or Mobile Money), and when Mobile Money is selected, clearly display the store’s registered Mobile Money number before order confirmation.",
-      "reqIds": [
-        "REQ-9"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-20",
-      "summary": "Implement order tracking with statuses (Pending, In Progress, On The Way, Completed) and near-real-time UI updates for both Customer and Store Owner when status changes occur; map Store Owner actions so that ticking items triggers “In Progress” and completing an order triggers “On The Way”, then allow final completion.",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-21",
-      "summary": "Implement Store Owner store registration and store details management including: store name, category, location, and Mobile Money number; ensure only the owning Store Owner can update their store and blocked stores cannot accept orders.",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-22",
-      "summary": "Implement Store Owner product management including add/edit/delete products, upload product images, set prices, set stock quantity, mark items out of stock, and provide low-stock alerts in the owner UI.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "status": "pending"
-    }
-  ],
-  "gameProjectType": "none",
-  "projectName": "PrimePost",
+  "new_feature_requests": [],
+  "projectName": "Fix runtime error: useLanguage used outside LanguageProvider",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

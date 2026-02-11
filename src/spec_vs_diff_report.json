@@ -1,174 +1,23 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T22:35:48.925Z",
-  "summary": "Diff adds an i18n framework with EN/FR translations, settings pages displaying a read-only userId, a geolocation utility, and a Motoko migration scaffold to introduce nextUserId/userId in state. However, several core requirements (privacy acceptance storage/gating, PIN hashing & unlock, admin password flow, sequential 5-digit ID generation, near-me filtering UI, order polling + in-app notifications, profile photo, and multiple owner/admin functional areas) are not evidenced in the provided diff summary. Diff also introduces biometric/WebAuthn flows and a factory reset entry point that were not requested.",
+  "generatedAt": "2026-02-11T22:45:17.479Z",
+  "summary": "The diff shows `LanguageProvider` being imported into `frontend/src/App.tsx`, but the provided truncated snippet does not include the part of the render tree where the provider would wrap the router/component tree. Therefore, it’s not possible to confirm from the diff summary alone that the React tree is actually wrapped in `LanguageProvider` to eliminate the runtime error.",
   "missing_requirements": [
     {
-      "id": "REQ-3",
-      "requirement": "Sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
-      "reason": "Backend/user profile types include userId and nextUserId, but the migration sets userId to \"unknown\" and there is no evidence of 5-digit sequential generation, left-zero padding, or concurrency-safe assignment logic. Frontend shows profile.userId read-only, but no evidence it will be the required 5-digit sequence.",
+      "id": "REQ-1",
+      "requirement": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
+      "reason": "Although `LanguageProvider` is imported in `frontend/src/App.tsx`, the truncated diff snippet does not show the JSX where the provider wraps the application/router tree; thus the core requirement cannot be verified as implemented from the available evidence.",
       "evidence": [
-        "backend/migration.mo (sets userId = \"unknown\"; nextUserId = 1)",
-        "backend/main.mo (var nextUserId = 1; UserProfile includes userId : Text)",
-        "frontend/src/components/auth/ProfileSetupDialog.tsx (sends userId: '' placeholder)",
-        "frontend/src/pages/customer/CustomerSettingsPage.tsx (displays profile.userId)",
-        "frontend/src/pages/owner/OwnerSettingsPage.tsx (displays profile.userId)"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation; backend stores acceptance status and gates protected actions; Privacy Policy acceptance supported.",
-      "reason": "Frontend adds two checkboxes, but the backend profile type only contains acceptedCustomerTerms/acceptedStoreOwnerTerms and does not show any persisted privacy-policy acceptance field. Profile setup mutation sets only acceptedCustomerTerms/acceptedStoreOwnerTerms; no privacy acceptance is sent/stored, and no backend gating is evidenced.",
-      "evidence": [
-        "backend/main.mo (UserProfile has acceptedCustomerTerms, acceptedStoreOwnerTerms only)",
-        "frontend/src/components/auth/ProfileSetupDialog.tsx (acceptedPrivacy state exists but save payload has no privacy field; only acceptedCustomerTerms/acceptedStoreOwnerTerms are sent)",
-        "backend/migration.mo (OldUserProfile/NewUserProfile do not include privacy acceptance)"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Secure PIN-based account security for Customers and Store Owners: require 4-digit PIN on first registration, store only hashed form in backend, require PIN verification for future unlock, allow PIN changes.",
-      "reason": "UI includes PinSetupDialog/UnlockDialog and settings strings mention change PIN, but there is no evidence in the backend of PIN hash storage, PIN verification endpoints, or PIN change logic. The shown profile types do not include a PIN hash field.",
-      "evidence": [
-        "backend/main.mo (UserProfile type shown does not include any PIN hash field)",
-        "frontend/src/App.tsx (references PinSetupDialog, UnlockDialog, useLocalPin; suggests local-only gating rather than backend-hashed PIN)"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "requirement": "Super Admin first-login password setup with hashed backend storage, per-session verification, and change password flow.",
-      "reason": "No evidence in backend/main.mo of admin password hash storage or verification/change endpoints, and no frontend admin password setup/change screens are evidenced in the diff summary.",
-      "evidence": [
-        "backend/main.mo (no admin password fields/types visible in truncated section)",
-        "frontend/src/pages/admin/AdminSettingsPage.tsx (only Terms management panel shown)"
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "requirement": "Profile management for Customers and Store Owners to update mobile number, email, optional profile photo, change PIN, and switch language, while preventing modification of assigned 5-digit user ID.",
-      "reason": "Customer/Owner settings pages show editable name/phone/email and display userId read-only, and AppLayout includes a language selector. However, there is no evidence of profile photo upload UI/flow, nor a PIN change UI/flow implementation in these settings pages (only translation keys exist).",
-      "evidence": [
-        "frontend/src/pages/customer/CustomerSettingsPage.tsx (fields for fullName/phone/email; shows userId read-only; no photo/PIN-change UI evidenced)",
-        "frontend/src/pages/owner/OwnerSettingsPage.tsx (fields for fullName/phone/email; shows userId read-only; no photo/PIN-change UI evidenced)",
-        "frontend/src/components/layout/AppLayout.tsx (language selector dropdown present)"
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "requirement": "Customer store discovery by Store ID, name search, category filter, and “near location” filtering using device geolocation with clear messaging when denied/unavailable.",
-      "reason": "StoreAccessPage exists for Store ID entry and StoreSearchPage summary indicates name/category filtering, but no evidence that the StoreSearchPage implements the “Near me” geolocation filter/sort or the denied/unavailable messaging behavior (despite geolocation utility and translation strings existing).",
-      "evidence": [
-        "frontend/src/utils/geolocation.ts (added geolocation helpers)",
-        "frontend-file-summaries.txt (StoreSearchPage: \"name filter and category dropdown\"; no mention of near-me)",
-        "frontend/src/i18n/translations/en.ts (storeSearch.nearMe/locationDenied/locationUnavailable keys exist)",
-        "frontend/src/i18n/translations/fr.ts (storeSearch.nearMe/locationDenied/locationUnavailable keys exist)"
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "requirement": "Checkout includes basket review, optional table number, special instructions, payment method selection (Cash/Mobile Money), and displays store Mobile Money number when Mobile Money selected; orders include these fields; validation errors translated.",
-      "reason": "Backend types include tableNumber/specialNote/paymentMethod, but the diff summary for CheckoutPage does not mention table number, special instructions, or displaying the store’s Mobile Money number when Mobile Money is selected.",
-      "evidence": [
-        "backend/main.mo (Order type includes tableNumber, specialNote, paymentMethod)",
-        "frontend-file-summaries.txt (CheckoutPage summary mentions payment method selection and PIN/biometric confirmation; does not mention table number/special instructions/MoMo number display)"
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "requirement": "Order tracking statuses with near-real-time UI updates via polling/refetch and in-app notifications/toasts on status changes; owner status mapping: ticking items => In Progress; owner \"Completed\" => On The Way; final action => Completed.",
-      "reason": "Backend Order status variants exist, but no evidence is shown of owner UI implementing the required status transition mapping, polling/refetch intervals for near-real-time updates, or in-app notifications on status changes.",
-      "evidence": [
-        "backend/main.mo (Order.status includes #pending/#inProgress/#onTheWay/#completed)",
-        "frontend-file-summaries.txt (Orders/OrdersManagement pages listed but no mention of polling or toast notifications on status changes)"
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "requirement": "Store Owner store registration/details management (name, category, location, Mobile Money number), only owner can update, blocked stores cannot accept orders and UI reflects blocked state.",
-      "reason": "Backend Store type includes required fields and blocked flag, and storeBlocked translation exists, but the diff summary does not provide evidence of owner update authorization enforcement or the blocked-store order placement gating on backend and UI.",
-      "evidence": [
-        "backend/main.mo (Store includes location, mobileMoneyNumber, isBlocked)",
-        "frontend/src/i18n/translations/en.ts (storeDetail.storeBlocked string)",
-        "frontend-file-summaries.txt (StoreRegistrationPage/StoreSettingsPage exist but details not evidenced)"
-      ]
-    },
-    {
-      "id": "REQ-12",
-      "requirement": "Store Owner product management: add/edit/delete products, upload images, set price/stock, mark out of stock, low-stock alerts in owner UI.",
-      "reason": "Backend Product type includes imageRef/stockQty/outOfStock, but no evidence is provided for low-stock alerts UI or a threshold, and the owner inventory UI specifics are not shown in the diff summary.",
-      "evidence": [
-        "backend/main.mo (Product includes imageRef, stockQty, outOfStock)",
-        "frontend-file-summaries.txt (InventoryPage exists but summary content not provided here)"
-      ]
-    },
-    {
-      "id": "REQ-13",
-      "requirement": "Marketplace: owners mark products as promotional/discounted; customers browse marketplace, search by item name, filter/sort by nearest location using geolocation; discounted items visually distinguished.",
-      "reason": "Backend Product includes discount/marketplace fields, but the diff summary is truncated for MarketplacePage and does not evidence near-me filtering/sorting or discounted-vs-original visual distinction behavior.",
-      "evidence": [
-        "backend/main.mo (Product has discount : ?Nat; marketplace : Bool)",
-        "frontend-file-summaries.txt (Marketplace page description truncated)"
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "requirement": "Super Admin capabilities: view all customers/owners, monitor orders/transactions, suspend/block users, block/unblock stores, analytics summary, and manage system settings (including terms/legal docs).",
-      "reason": "AdminSettingsPage shows a Terms management panel, but the diff summary does not evidence the broader admin requirements (user lists, suspend/block, orders/transactions list, analytics summary, store blocking).",
-      "evidence": [
-        "frontend/src/pages/admin/AdminSettingsPage.tsx (TermsManagementPanel only)",
-        "frontend-file-summaries.txt (mentions admin functions in useQueries, but actual UI/flows not evidenced in this diff snippet)"
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "requirement": "Cohesive, mobile-first visual theme across all screens, consistent in light/dark modes.",
-      "reason": "ThemeProvider/ThemeToggle are mentioned, but the diff summary does not provide enough evidence that all primary pages were updated to a cohesive, consistent mobile-first theme across customer/owner/admin, beyond a shared AppLayout/header.",
-      "evidence": [
-        "frontend/src/components/theme/ThemeProvider.tsx (mentioned in frontend-file-summaries.txt)",
-        "frontend/src/components/layout/AppLayout.tsx (shared layout added/modified)"
+        "frontend/src/App.tsx (truncated)"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Biometric enablement and WebAuthn/biometric confirmation flows layered into checkout/unlock (biometric dialogs, biometric checks).",
-      "reason": "BuildRequest allows optional additional in-app PIN/password steps but does not request biometrics/WebAuthn prompts or biometric enablement flows.",
-      "evidence": [
-        "frontend/src/App.tsx (BiometricEnablementDialog, useBiometricAuth)",
-        "frontend-file-summaries.txt (CheckoutPage: \"PIN/biometric confirmation\"; mentions WebAuthn prompts)"
-      ]
-    },
-    {
-      "description": "Factory reset functionality accessible from Admin login.",
-      "reason": "BuildRequest does not request a factory reset feature exposed in the UI.",
-      "evidence": [
-        "frontend-file-summaries.txt (RoleLoginPage: \"factory reset functionality accessible from Admin login\")"
-      ]
-    },
-    {
-      "description": "Project state summary claims Flutter app and cloud backend/push notifications.",
-      "reason": "BuildRequest explicitly forbids implementing Flutter/native Flutter and external cloud backends and states push notifications are not available; the diff adds a project_state.json summary text that contradicts constraints (even if only metadata).",
-      "evidence": [
-        "project_state.json (summary mentions \"Flutter\" and \"cloud backend (e.g., Firebase)\" and \"push notifications\")"
-      ]
-    }
-  ],
-  "confidence": 0.68,
+  "hallucinated_features": [],
+  "confidence": 0.42,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/i18n/LanguageProvider.tsx",
-    "frontend/src/i18n/translations/en.ts",
-    "frontend/src/i18n/translations/fr.ts",
-    "frontend/src/pages/admin/AdminSettingsPage.tsx",
-    "frontend/src/pages/customer/CustomerSettingsPage.tsx",
-    "frontend/src/pages/owner/OwnerSettingsPage.tsx",
-    "frontend/src/utils/geolocation.ts",
     "project_state.json"
   ]
 }

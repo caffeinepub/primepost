@@ -2,6 +2,7 @@ import { createRouter, createRoute, createRootRoute, RouterProvider, Outlet, use
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useHasAcceptedTerms } from './hooks/useQueries';
 import { ThemeProvider } from './components/theme/ThemeProvider';
+import { LanguageProvider } from './i18n/LanguageProvider';
 import { Toaster } from '@/components/ui/sonner';
 import AppLayout from './components/layout/AppLayout';
 import RoleLoginPage from './pages/auth/RoleLoginPage';
@@ -477,8 +478,10 @@ declare module '@tanstack/react-router' {
 export default function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
-      <Toaster />
+      <LanguageProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

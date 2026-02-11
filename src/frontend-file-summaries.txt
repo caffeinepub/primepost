@@ -1,5 +1,5 @@
 {
-  "frontend/src/App.tsx": "Main application component with TanStack Router setup, role-based route protection, and new settings routes for customer/owner/admin with translated home page strings.",
+  "frontend/src/App.tsx": "Main application component with TanStack Router setup, role-based route protection, settings routes for customer/owner/admin, and LanguageProvider wrapping the RouterProvider to enable i18n support across all routes and components.",
   "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations including user profiles, Super Admin bootstrap, factory reset mutation, terms management, stores, products, orders, reviews, marketplace, and admin functions with proper cache invalidation and actor dependency handling.",
   "frontend/src/components/theme/ThemeProvider.tsx": "Theme context provider managing light/dark/system theme modes with localStorage persistence and automatic class application to document root.",
   "frontend/src/components/theme/ThemeToggle.tsx": "Theme toggle button component switching between light and dark modes with sun/moon icons.",

@@ -1,313 +1,47 @@
 {
   "kind": "build_request",
-  "title": "PrimePost: Bilingual mobile-first POS/marketplace with role-based auth, sequential user IDs, terms/privacy gating, and order tracking",
-  "priority": "normal",
+  "title": "Fix runtime error: useLanguage used outside LanguageProvider",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the app has exactly three role login entry points on the main screen: Customer, Store Owner, and Super Admin, with no other login types visible anywhere in the UI.",
+      "text": "Ensure the React component tree is wrapped in `LanguageProvider` so any call to `useLanguage()` (e.g., in `frontend/src/App.tsx` and `frontend/src/components/layout/AppLayout.tsx`) is always within provider context, eliminating the runtime error \"useLanguage must be used within a LanguageProvider\".",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "user-1"
+          "msg-5"
         ],
         "quotes": [
-          "The application must have exactly three (3) login options on the main screen:\n\n1. Login as Customer\n\n\n2. Login as Store Owner\n\n\n3. Login as Super Admin\n\n\nNo other login types."
+          "It's indicating this error \nuseLanguage must be used within a LanguageProvider"
         ]
       },
       "acceptanceCriteria": [
-        "The public home screen shows exactly three primary actions to start login: Customer, Store Owner, Super Admin.",
-        "No other roles (e.g., staff/cashier) appear in navigation, auth screens, or profile setup.",
-        "Attempting to access role routes directly without the matching role continues to show an access-denied experience."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Implement full bilingual (English/French) UI support across the application, including an in-app language switch in Settings/Profile, and apply translations consistently to all customer, owner, and admin screens.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "The entire application must support:\n\n> 🌍 English and French language (Full bilingual support)\nUsers must be able to switch language inside settings."
-        ]
-      },
-      "acceptanceCriteria": [
-        "A language selector is available to signed-in users in a settings/profile area (Customer and Store Owner at minimum; Admin may reuse the same setting).",
-        "Switching language immediately updates UI strings without requiring logout.",
-        "Language choice persists across reloads within the same device/browser context.",
-        "Core flows (login, profile setup, store browsing, cart/checkout, orders, owner inventory/orders, admin dashboard) have translated strings for both languages."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Add a sequential, unique, non-editable 5-digit numeric ID for every Customer and Store Owner (00001, 00002, ...), generated automatically on first registration, stored in backend state, and displayed in the user profile UI.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "The system must automatically generate a unique 5-digit numeric ID for:\n\nCustomers\n\nStore Owners\n\n\nFormat must be sequential numeric:\n\n00001\n00002\n00003\n00004\n… and continue automatically as users register.\n\nRules:\n\nID must be auto-generated.\n\nID must not be editable.\n\nID must appear in user profile.\n\nNo duplicate IDs allowed.\n\nSequence must continue incrementally."
-        ]
-      },
-      "acceptanceCriteria": [
-        "When a new Customer or Store Owner profile is created, the backend assigns the next available 5-digit ID and persists it.",
-        "IDs are strictly sequential with left-zero padding to 5 digits (e.g., 00001).",
-        "The assigned ID is returned as part of the user profile data and rendered in the profile screen.",
-        "The UI provides no form input to edit the ID, and backend rejects any attempt to change it via profile updates.",
-        "No two users can receive the same ID, even under concurrent registrations."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Enforce mandatory acceptance of both Terms & Conditions and Privacy Policy before a Customer or Store Owner can complete account creation, with Super Admin excluded from this requirement.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Before a Customer or Store Owner can create an account:\n\nThey must tick a mandatory checkbox to accept:\n\nTerms & Conditions\n\nPrivacy Policy\n\n\nThey cannot proceed without ticking the box.\n\nSuper Admin login does NOT require this checkbox."
-        ]
-      },
-      "acceptanceCriteria": [
-        "During profile/account creation for Customer and Store Owner, the UI requires explicit acceptance of both Terms & Conditions and Privacy Policy before enabling submission.",
-        "Super Admin bootstrap/profile creation flow does not require these checkboxes.",
-        "Backend stores acceptance status for each user and uses it to gate protected actions that require terms acceptance (e.g., placing orders for customers; creating/updating stores/products and updating order statuses for store owners).",
-        "Privacy Policy acceptance is supported as an accept-able document type (not rejected as “not applicable”)."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Implement secure PIN-based account security for Customers and Store Owners: require a 4-digit PIN on first registration, store only a hashed form, use it for future in-app unlock/login gating, and allow PIN changes from profile/settings.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "User must create a 4-digit PIN during first registration.\n\nPIN must be securely encrypted (hashed) in the database.\n\nPIN will be used for future logins.\n\nUser can change PIN from profile settings."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Customer and Store Owner onboarding requires setting a 4-digit PIN (with confirmation) before granting access to role dashboards.",
-        "The backend persists only a hashed PIN representation (no plaintext storage).",
-        "Subsequent sessions require PIN verification to unlock access to authenticated areas (or equivalent session lock behavior).",
-        "A user can change their PIN from profile/settings after verifying their current PIN.",
-        "PIN change updates the stored hash and invalidates any existing local/session unlock state."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Implement Super Admin first-login password setup: allow first login without an existing password, then force the Super Admin to create a password after first login, and require that password for future admin unlock/login operations within the app session.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Super Admin account will NOT require a password during first login.\n\nAfter first login, the system must force Super Admin to create a secure password.\n\nAdmin must then use that password for future logins."
-        ]
-      },
-      "acceptanceCriteria": [
-        "If a Super Admin does not yet have an admin password set, the first successful admin sign-in triggers a mandatory password setup screen before showing admin functionality.",
-        "After the password is set, admin areas require password verification (at least once per session) to proceed.",
-        "The backend stores only a hashed password (no plaintext).",
-        "There is a clear flow to change the admin password from an admin settings area (requiring current password verification)."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Add profile management for Customers and Store Owners to update mobile number, email address, optional profile photo, change PIN, and switch language, while preventing modification of the assigned 5-digit user ID.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Customers and Store Owners must be able to:\n\nUpdate mobile number\n\nUpdate email address\n\nUpdate profile photo (optional)\n\nChange 4-digit PIN\n\nSwitch language (English / French)\n\n\nUsers cannot modify:\n\nTheir unique 5-digit ID\n\n\nAll profile updates must be securely stored."
-        ]
-      },
-      "acceptanceCriteria": [
-        "A settings/profile screen exists for Customer and Store Owner with editable fields: phone number, email, and profile photo upload (optional).",
-        "The unique 5-digit ID is displayed read-only and cannot be edited.",
-        "Profile changes persist after reload and are reflected in subsequent profile reads.",
-        "PIN change is accessible from the same settings/profile area (reusing the secure flow from REQ-5).",
-        "Language switch is accessible from the same settings/profile area (reusing REQ-2)."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Support customer store discovery and access by (a) entering Store ID, (b) searching by store name, (c) filtering by category, and (d) “near location” filtering using device geolocation (GPS-based) when permission is granted.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Customers must be able to:\n\nEnter Store ID to access a store\n\nSearch store by:\n\nStore name\n\nCategory\n\nNear location (GPS-based)"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Customer can navigate to a screen to enter a Store ID and open that store if it exists.",
-        "Store search supports name search and category filtering.",
-        "A “Near me” option requests geolocation permission and, when granted, sorts/filters stores by proximity using the store’s location field (or coordinates if available).",
-        "If geolocation permission is denied/unavailable, the UI shows a clear message and continues to allow name/category search."
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "text": "Ensure checkout supports: basket review, optional table number, special instructions, payment method selection (Cash or Mobile Money), and when Mobile Money is selected, clearly display the store’s registered Mobile Money number before order confirmation.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Checkout Process\n\nCustomer can:\n\nReview basket\n\nEnter table number (for restaurants)\n\nAdd special instructions\n\nChoose payment method:\n\nCash\n\nMobile Money\n\n\n\nIf Mobile Money is selected:\n\nStore’s registered Mobile Money number must display clearly."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Checkout UI includes fields for table number (optional), special instructions (optional), and payment method (Cash/Mobile Money).",
-        "If Mobile Money is selected, the store’s Mobile Money number is displayed prominently on the checkout screen prior to placing the order.",
-        "Orders created from checkout include the selected payment method and any provided table number/notes.",
-        "Validation errors are shown in the active language (English/French)."
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "text": "Implement order tracking with statuses (Pending, In Progress, On The Way, Completed) and near-real-time UI updates for both Customer and Store Owner when status changes occur; map Store Owner actions so that ticking items triggers “In Progress” and completing an order triggers “On The Way”, then allow final completion.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Order statuses:\n\nPending\n\nIn Progress\n\nOn The Way\n\nCompleted\n\n\nWhen store owner ticks items:\n\nCustomer sees “In Progress”\n\n\nWhen store owner clicks completed:\n\nCustomer sees “On The Way”\n\nPush notifications required."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Customer order lists/details display one of the four statuses with consistent labeling.",
-        "Store Owner order management UI can progress orders through the required statuses in the required mapping: item picking/ticking => In Progress; clicking “Completed” in owner flow sets customer-visible status to On The Way; a final action sets status to Completed.",
-        "Customer screens update status changes without requiring a manual refresh (e.g., via polling/refetch intervals while the app is open).",
-        "When an order status changes while the customer/owner is actively in the app, an in-app notification/toast is shown."
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "text": "Implement Store Owner store registration and store details management including: store name, category, location, and Mobile Money number; ensure only the owning Store Owner can update their store and blocked stores cannot accept orders.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Store Owner must be able to:\n\nRegister store\n\nAdd store details\n\nAdd Mobile Money number"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Store Owner can create a store with name, category, location, and Mobile Money number.",
-        "Store Owner can edit their store details and the changes persist.",
-        "Non-owners cannot update the store and receive an access-denied error.",
-        "If a store is blocked by Admin, customers cannot place orders to that store and the UI reflects the blocked state appropriately."
-      ]
-    },
-    {
-      "id": "REQ-12",
-      "text": "Implement Store Owner product management including add/edit/delete products, upload product images, set prices, set stock quantity, mark items out of stock, and provide low-stock alerts in the owner UI.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Add/edit/delete products\n\nUpload product images\n\nSet prices\n\nSet stock quantity\n\nReceive low stock alerts\n\nMark items Out of Stock"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Owner can create, edit, and delete products for their store.",
-        "Product creation/edit supports image upload, price, and stock quantity.",
-        "Products can be marked out of stock and appear as unavailable to customers.",
-        "Owner UI highlights low-stock products (define a configurable threshold in UI, or a sensible default) and shows an alert indicator while the app is open."
-      ]
-    },
-    {
-      "id": "REQ-13",
-      "text": "Implement Marketplace functionality: Store Owners can publish promotional/discounted items and special offers; Customers can browse Marketplace, search items by name, filter by nearest location, and view discounted items.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "7️⃣ MARKETPLACE FEATURE\n\nStore Owners can:\n\nPublish promotional or discounted items\n\nAdd special offers\n\n\nCustomers can:\n\nClick Marketplace icon\n\nSearch items by name\n\nFilter by nearest location\n\nView discounted items"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Owner can mark a product as a marketplace/promotional item and optionally set a discount value.",
-        "Customer Marketplace page lists marketplace/promotional items and supports search by item name.",
-        "Customer Marketplace supports a “near me” filter/sort using device geolocation when available.",
-        "Discounted items are visually distinguished from non-discounted items (e.g., showing original vs discounted price)."
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "text": "Expand Super Admin capabilities inside the mobile app to: view all customers and store owners, monitor transactions/orders, suspend/block users, view an analytics summary, and manage system settings.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Super Admin must be able to:\n\nView all customers\n\nView all store owners\n\nMonitor transactions\n\nSuspend or block users\n\nView analytics summary\n\nManage system settings\n\n\nAdmin role exists inside mobile app only (no web platform)."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin dashboard provides lists of customers and store owners, with the ability to suspend/unsuspend users.",
-        "Admin can block/unblock stores and blocked stores cannot accept new orders.",
-        "Admin can view an orders/transactions list with basic details (store, customer, total, status, timestamp if available).",
-        "Admin sees an analytics summary computed from order data (e.g., totals over time) and it updates as new orders are placed.",
-        "Admin settings include terms/legal document management and any system-level configuration already supported by the app."
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "text": "Apply a cohesive, mobile-first visual theme for PrimePost across all screens (Customer/Owner/Admin), including typography, spacing, and component styling, and keep it consistent in both light and dark modes.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "user-1"
-        ],
-        "quotes": [
-          "Build a secure, scalable multi-vendor POS and marketplace mobile application called PrimePost.\n\n⚠️ This project is mobile-only."
-        ]
-      },
-      "acceptanceCriteria": [
-        "All primary pages share consistent header/navigation patterns and spacing suitable for phone screens.",
-        "A single, coherent color system and typography scale is applied consistently (avoid introducing multiple competing styles).",
-        "Light/dark mode remains readable and visually consistent after changes."
+        "Loading any route (including `/`) no longer throws the error \"useLanguage must be used within a LanguageProvider\" in the browser console.",
+        "`useLanguage()` works in `IndexComponent` (home page) and `AppLayout` (header language selector + translated nav/footer) without crashing.",
+        "The app renders successfully without requiring changes to immutable provider bootstrap files (e.g., `frontend/src/main.tsx`)."
       ]
     }
   ],
   "constraints": [
-    "Do not implement Flutter or a native Flutter codebase; deliver within the existing Internet Computer + React/TypeScript project structure present in this repository.",
-    "Do not add external cloud backends such as Firebase; persist application state in the existing Motoko canister.",
-    "No third-party authentication providers; authentication must remain based on Internet Identity (additional in-app PIN/password steps may be layered on top).",
-    "Native mobile push notifications are not available in this stack; implement in-app notifications while the app is open and near-real-time updates via polling/refetch.",
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo); only add backend/migration.mo if state schema changes require an upgrade path.",
-    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose them from outside instead."
+    "Do not modify immutable frontend paths: `frontend/src/main.tsx`, `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, and anything under `frontend/src/components/ui`.",
+    "Keep all user-facing text in English in the build request."
   ],
   "nonGoals": [
-    "Building a web dashboard/admin portal separate from the mobile app.",
-    "Implementing GPS maps or third-party map providers (only basic geolocation-based filtering/sorting is required).",
-    "Integrating real payment rails for Mobile Money (only display the store number and record the selected payment method).",
-    "WebSockets or true server push; near-real-time behavior should rely on polling while the app is open.",
-    "Adding additional roles beyond Customer, Store Owner, and Super Admin."
+    "Adding new languages or changing translation content/keys.",
+    "Changing authentication, routing behavior, or backend canister logic."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }
